@@ -1,9 +1,12 @@
 const { sequelize, Slot, Booking } = require('../models');
 const googleCalendarService = require('../services/googleCalendarService');
+const { isValidService, getServicePrice, getServiceLabel } = require('../utils/services');
 
-// POST /api/bookings  { slotId, clientName, clientPhone }  (público)
+// POST /api/bookings  { slotId, clientName, clientPhone, service }  (público)
 async function createBooking(req, res, next) {
   const { slotId, clientName, clientPhone } = req.body;
+  const service = isValidService(req.body.service) ? req.body.service : 'corte';
+  const price = getServicePrice(service);
 
   const t = await sequelize.transaction();
   try {
@@ -22,6 +25,8 @@ async function createBooking(req, res, next) {
       slotId: slot.id,
       clientName,
       clientPhone,
+      service,
+      price,
       status: 'confirmed'
     }, { transaction: t });
 
@@ -34,6 +39,7 @@ async function createBooking(req, res, next) {
     googleCalendarService.createBookingEvent({
       clientName,
       clientPhone,
+      service: getServiceLabel(service),
       date: slot.date,
       time: slot.time,
       durationMinutes: slot.durationMinutes
@@ -47,6 +53,8 @@ async function createBooking(req, res, next) {
         id: booking.id,
         clientName: booking.clientName,
         clientPhone: booking.clientPhone,
+        service: booking.service,
+        price: booking.price,
         date: slot.date,
         time: slot.time
       }
@@ -81,21 +89,26 @@ async function listBookings(req, res, next) {
   }
 }
 
-// PUT /api/admin/bookings/:id  { clientName, clientPhone }
+// PUT /api/admin/bookings/:id  { clientName, clientPhone, service }
 async function updateBooking(req, res, next) {
   try {
     const booking = await Booking.findByPk(req.params.id, { include: [{ model: Slot, as: 'slot' }] });
     if (!booking) return res.status(404).json({ message: 'Reserva no encontrada.' });
 
-    const { clientName, clientPhone } = req.body;
+    const { clientName, clientPhone, service } = req.body;
     if (clientName) booking.clientName = clientName;
     if (clientPhone) booking.clientPhone = clientPhone;
+    if (service && isValidService(service)) {
+      booking.service = service;
+      booking.price = getServicePrice(service);
+    }
     await booking.save();
 
     if (booking.googleEventId) {
       googleCalendarService.updateBookingEvent(booking.googleEventId, {
         clientName: booking.clientName,
         clientPhone: booking.clientPhone,
+        service: getServiceLabel(booking.service),
         date: booking.slot.date,
         time: booking.slot.time,
         durationMinutes: booking.slot.durationMinutes

@@ -33,6 +33,11 @@ export const routes: Routes = [
         path: 'calendario',
         loadComponent: () =>
           import('./features/admin/admin-calendar/admin-calendar').then((m) => m.AdminCalendar)
+      },
+      {
+        path: 'estadisticas',
+        loadComponent: () =>
+          import('./features/admin/admin-stats/admin-stats').then((m) => m.AdminStats)
       }
     ]
   },

@@ -1,6 +1,6 @@
 const express = require('express');
 const { query } = require('express-validator');
-const { getAvailableSlots } = require('../controllers/slotController');
+const { getAvailableSlots, getAvailabilityByMonth } = require('../controllers/slotController');
 const { validate } = require('../middleware/validate');
 
 const router = express.Router();
@@ -13,6 +13,12 @@ router.get('/',
   ],
   validate,
   getAvailableSlots
+);
+
+router.get('/availability',
+  [query('month').matches(/^\d{4}-\d{2}$/).withMessage('Formato esperado: YYYY-MM.')],
+  validate,
+  getAvailabilityByMonth
 );
 
 module.exports = router;

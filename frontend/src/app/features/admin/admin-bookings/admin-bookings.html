@@ -29,6 +29,8 @@
             <th>Hora</th>
             <th>Cliente</th>
             <th>Teléfono</th>
+            <th>Servicio</th>
+            <th>Precio</th>
             <th>Estado</th>
             <th></th>
           </tr>
@@ -52,6 +54,18 @@
                   {{ booking.clientPhone }}
                 }
               </td>
+              <td>
+                @if (editingBookingId === booking.id) {
+                  <mat-select class="inline-edit" [(ngModel)]="editService">
+                    @for (s of services; track s.value) {
+                      <mat-option [value]="s.value">{{ s.label }}</mat-option>
+                    }
+                  </mat-select>
+                } @else {
+                  {{ serviceLabel(booking.service) }}
+                }
+              </td>
+              <td>{{ booking.price }} €</td>
               <td><span class="status-chip">{{ booking.status === 'confirmed' ? 'Confirmada' : 'Cancelada' }}</span></td>
               <td class="actions-cell">
                 @if (editingBookingId === booking.id) {

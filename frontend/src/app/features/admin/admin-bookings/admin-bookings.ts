@@ -12,8 +12,10 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
+import { MatSelectModule } from '@angular/material/select';
+
 import { BookingService } from '../../../core/services/booking.service';
-import { Booking } from '../../../core/models/booking.model';
+import { Booking, ServiceType, SERVICES } from '../../../core/models/booking.model';
 
 @Component({
   selector: 'app-admin-bookings',
@@ -30,7 +32,8 @@ import { Booking } from '../../../core/models/booking.model';
     MatNativeDateModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatSelectModule
   ],
   templateUrl: './admin-bookings.html',
   styleUrl: './admin-bookings.scss'
@@ -39,10 +42,12 @@ export class AdminBookings {
   readonly bookings = signal<Booking[]>([]);
   readonly loading = signal(false);
   readonly filterDate = signal<Date | null>(null);
+  readonly services = SERVICES;
 
   editingBookingId: number | null = null;
   editName = '';
   editPhone = '';
+  editService: ServiceType = 'corte';
 
   constructor(private bookingService: BookingService, private snackBar: MatSnackBar) {
     this.loadBookings();
@@ -82,16 +87,22 @@ export class AdminBookings {
     this.editingBookingId = booking.id;
     this.editName = booking.clientName;
     this.editPhone = booking.clientPhone;
+    this.editService = booking.service;
   }
 
   cancelEditForm(): void {
     this.editingBookingId = null;
   }
 
+  serviceLabel(service: ServiceType): string {
+    return this.services.find((s) => s.value === service)?.label ?? service;
+  }
+
   saveEdit(booking: Booking): void {
     this.bookingService.updateBooking(booking.id, {
       clientName: this.editName.trim(),
-      clientPhone: this.editPhone.trim()
+      clientPhone: this.editPhone.trim(),
+      service: this.editService
     }).subscribe({
       next: () => {
         this.editingBookingId = null;

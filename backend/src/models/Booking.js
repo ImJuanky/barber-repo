@@ -28,6 +28,16 @@ const Booking = sequelize.define('Booking', {
     allowNull: false,
     defaultValue: 'confirmed'
   },
+  service: {
+    type: DataTypes.ENUM('corte', 'corte_barba'),
+    allowNull: false,
+    defaultValue: 'corte'
+  },
+  price: {
+    type: DataTypes.DECIMAL(6, 2),
+    allowNull: false,
+    defaultValue: 10
+  },
   googleEventId: {
     type: DataTypes.STRING(255),
     allowNull: true,

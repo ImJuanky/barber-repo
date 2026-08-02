@@ -41,7 +41,7 @@ function addMinutes(date, time, minutes) {
  * Crea un evento en Google Calendar para una reserva confirmada.
  * Si las credenciales no están configuradas, no hace nada (no bloquea la reserva).
  */
-async function createBookingEvent({ clientName, clientPhone, date, time, durationMinutes = 30, timeZone = 'Europe/Madrid' }) {
+async function createBookingEvent({ clientName, clientPhone, service, date, time, durationMinutes = 30, timeZone = 'Europe/Madrid' }) {
   if (!isConfigured()) {
     console.warn('[googleCalendarService] Credenciales de Google no configuradas. Se omite la creación del evento.');
     return null;
@@ -55,8 +55,8 @@ async function createBookingEvent({ clientName, clientPhone, date, time, duratio
     const end = buildDateTime(...Object.values(addMinutes(date, time, durationMinutes)));
 
     const event = {
-      summary: `Cita: ${clientName}`,
-      description: `Cliente: ${clientName}\nTeléfono: ${clientPhone}`,
+      summary: `Cita: ${clientName}${service ? ' · ' + service : ''}`,
+      description: `Cliente: ${clientName}\nTeléfono: ${clientPhone}${service ? `\nServicio: ${service}` : ''}`,
       start: { dateTime: start, timeZone },
       end: { dateTime: end, timeZone },
       reminders: { useDefault: true }
@@ -89,7 +89,7 @@ async function deleteBookingEvent(eventId) {
   }
 }
 
-async function updateBookingEvent(eventId, { clientName, clientPhone, date, time, durationMinutes = 30, timeZone = 'Europe/Madrid' }) {
+async function updateBookingEvent(eventId, { clientName, clientPhone, service, date, time, durationMinutes = 30, timeZone = 'Europe/Madrid' }) {
   if (!isConfigured() || !eventId) return;
 
   try {
@@ -103,8 +103,8 @@ async function updateBookingEvent(eventId, { clientName, clientPhone, date, time
       calendarId: process.env.GOOGLE_CALENDAR_ID || 'primary',
       eventId,
       requestBody: {
-        summary: `Cita: ${clientName}`,
-        description: `Cliente: ${clientName}\nTeléfono: ${clientPhone}`,
+        summary: `Cita: ${clientName}${service ? ' · ' + service : ''}`,
+        description: `Cliente: ${clientName}\nTeléfono: ${clientPhone}${service ? `\nServicio: ${service}` : ''}`,
         start: { dateTime: start, timeZone },
         end: { dateTime: end, timeZone }
       }

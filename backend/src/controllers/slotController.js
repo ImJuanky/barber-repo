@@ -27,6 +27,38 @@ async function getAvailableSlots(req, res, next) {
   }
 }
 
+// GET /api/slots/availability?month=YYYY-MM  (público: qué días del mes tienen huecos libres)
+async function getAvailabilityByMonth(req, res, next) {
+  try {
+    const { month } = req.query;
+    if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+      return res.status(400).json({ message: 'Parámetro "month" inválido. Formato esperado: YYYY-MM.' });
+    }
+
+    const from = `${month}-01`;
+    const [year, mon] = month.split('-').map(Number);
+    const lastDay = new Date(year, mon, 0).getDate();
+    const to = `${month}-${String(lastDay).padStart(2, '0')}`;
+
+    const slots = await Slot.findAll({
+      where: {
+        status: 'available',
+        date: { [Op.between]: [from, to] }
+      },
+      attributes: ['date']
+    });
+
+    const counts = {};
+    for (const slot of slots) {
+      counts[slot.date] = (counts[slot.date] || 0) + 1;
+    }
+
+    res.json(counts);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // GET /api/admin/slots?date=&from=&to=  (admin: todos los huecos con su estado)
 async function listAllSlots(req, res, next) {
   try {
@@ -63,6 +95,32 @@ async function createSlots(req, res, next) {
       const [slot, wasCreated] = await Slot.findOrCreate({
         where: { date, time: t },
         defaults: { durationMinutes: durationMinutes || 30, status: 'available' }
+      });
+      if (wasCreated) created.push(slot);
+    }
+
+    res.status(201).json({ created, message: `${created.length} hueco(s) creado(s).` });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/admin/slots/bulk  { slots: [{ date, time, durationMinutes }] }
+// Crea huecos en varias fechas distintas de una sola vez (usado por la
+// cuadrícula semanal del panel de administración).
+async function createSlotsBulk(req, res, next) {
+  try {
+    const { slots } = req.body;
+    if (!Array.isArray(slots) || slots.length === 0) {
+      return res.status(400).json({ message: 'Debes indicar al menos un hueco.' });
+    }
+
+    const created = [];
+    for (const item of slots) {
+      if (!item?.date || !item?.time) continue;
+      const [slot, wasCreated] = await Slot.findOrCreate({
+        where: { date: item.date, time: item.time },
+        defaults: { durationMinutes: item.durationMinutes || 30, status: 'available' }
       });
       if (wasCreated) created.push(slot);
     }
@@ -143,8 +201,10 @@ async function unblockSlot(req, res, next) {
 
 module.exports = {
   getAvailableSlots,
+  getAvailabilityByMonth,
   listAllSlots,
   createSlots,
+  createSlotsBulk,
   updateSlot,
   deleteSlot,
   blockSlot,

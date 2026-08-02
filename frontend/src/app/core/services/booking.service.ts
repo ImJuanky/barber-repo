@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Booking, CreateBookingPayload } from '../models/booking.model';
+import { Booking, CreateBookingPayload, ServiceType } from '../models/booking.model';
 
 @Injectable({ providedIn: 'root' })
 export class BookingService {
@@ -23,7 +23,7 @@ export class BookingService {
     return this.http.get<Booking[]>(this.adminUrl, { params });
   }
 
-  updateBooking(id: number, data: { clientName?: string; clientPhone?: string }): Observable<Booking> {
+  updateBooking(id: number, data: { clientName?: string; clientPhone?: string; service?: ServiceType }): Observable<Booking> {
     return this.http.put<Booking>(`${this.adminUrl}/${id}`, data);
   }
 

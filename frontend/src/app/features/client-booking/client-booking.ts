@@ -6,15 +6,22 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatChipsModule } from '@angular/material/chips';
 
 import { SlotService } from '../../core/services/slot.service';
 import { BookingService } from '../../core/services/booking.service';
 import { Slot } from '../../core/models/slot.model';
+import { SERVICES, ServiceType } from '../../core/models/booking.model';
+
+interface CalendarDay {
+  date: string;
+  dayNumber: number;
+  inCurrentMonth: boolean;
+  isPast: boolean;
+  isToday: boolean;
+  hasAvailability: boolean;
+}
 
 @Component({
   selector: 'app-client-booking',
@@ -27,30 +34,63 @@ import { Slot } from '../../core/models/slot.model';
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule,
-    MatChipsModule
+    MatSnackBarModule
   ],
   templateUrl: './client-booking.html',
   styleUrl: './client-booking.scss'
 })
 export class ClientBooking {
-  readonly minDate = new Date();
-  readonly selectedDate = signal<Date>(new Date());
-  readonly slots = signal<Slot[]>([]);
-  readonly selectedSlot = signal<Slot | null>(null);
-  readonly loadingSlots = signal(false);
-  readonly submitting = signal(false);
-  readonly confirmed = signal<{ date: string; time: string } | null>(null);
-
-  readonly groupedByHour = computed(() => this.slots());
-
   private fb = inject(FormBuilder);
   private slotService = inject(SlotService);
   private bookingService = inject(BookingService);
   private snackBar = inject(MatSnackBar);
+
+  readonly services = SERVICES;
+  readonly selectedService = signal<ServiceType | null>(null);
+
+  readonly weekDays = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+  readonly viewMonth = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  readonly availability = signal<Record<string, number>>({});
+  readonly loadingMonth = signal(false);
+
+  readonly selectedDate = signal<string | null>(null);
+  readonly slots = signal<Slot[]>([]);
+  readonly selectedSlot = signal<Slot | null>(null);
+  readonly loadingSlots = signal(false);
+  readonly submitting = signal(false);
+  readonly confirmed = signal<{ date: string; time: string; service: ServiceType } | null>(null);
+
+  readonly monthLabel = computed(() =>
+    this.viewMonth().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+  );
+
+  readonly calendarDays = computed<CalendarDay[]>(() => {
+    const view = this.viewMonth();
+    const year = view.getFullYear();
+    const month = view.getMonth();
+    const firstOfMonth = new Date(year, month, 1);
+    const startOffset = (firstOfMonth.getDay() + 6) % 7; // lunes = 0
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const todayIso = this.toIso(new Date());
+    const availability = this.availability();
+
+    const days: CalendarDay[] = [];
+    for (let i = 0; i < startOffset; i++) {
+      const d = new Date(year, month, i - startOffset + 1);
+      days.push(this.buildDay(d, false, todayIso, availability));
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      days.push(this.buildDay(new Date(year, month, d), true, todayIso, availability));
+    }
+    while (days.length % 7 !== 0) {
+      const last = days[days.length - 1];
+      const d = new Date(last.date);
+      d.setDate(d.getDate() + 1);
+      days.push(this.buildDay(d, false, todayIso, availability));
+    }
+    return days;
+  });
 
   readonly form = this.fb.group({
     clientName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
@@ -58,25 +98,76 @@ export class ClientBooking {
   });
 
   constructor() {
-    this.loadSlots();
+    this.loadMonthAvailability();
   }
 
-  onDateChange(date: Date | null): void {
-    if (!date) return;
-    this.selectedDate.set(date);
-    this.selectedSlot.set(null);
-    this.loadSlots();
-  }
-
-  private toIsoDate(date: Date): string {
+  private toIso(date: Date): string {
     const pad = (n: number) => String(n).padStart(2, '0');
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   }
 
-  loadSlots(): void {
+  private buildDay(date: Date, inCurrentMonth: boolean, todayIso: string, availability: Record<string, number>): CalendarDay {
+    const iso = this.toIso(date);
+    return {
+      date: iso,
+      dayNumber: date.getDate(),
+      inCurrentMonth,
+      isPast: iso < todayIso,
+      isToday: iso === todayIso,
+      hasAvailability: (availability[iso] || 0) > 0
+    };
+  }
+
+  selectService(service: ServiceType): void {
+    this.selectedService.set(service);
+  }
+
+  serviceLabel(service: ServiceType): string {
+    return this.services.find((s) => s.value === service)?.label ?? service;
+  }
+
+  servicePrice(service: ServiceType): number {
+    return this.services.find((s) => s.value === service)?.price ?? 0;
+  }
+
+  loadMonthAvailability(): void {
+    this.loadingMonth.set(true);
+    const view = this.viewMonth();
+    const month = `${view.getFullYear()}-${String(view.getMonth() + 1).padStart(2, '0')}`;
+    this.slotService.getAvailabilityByMonth(month).subscribe({
+      next: (data) => {
+        this.availability.set(data);
+        this.loadingMonth.set(false);
+      },
+      error: () => this.loadingMonth.set(false)
+    });
+  }
+
+  prevMonth(): void {
+    const v = this.viewMonth();
+    const now = new Date();
+    const prev = new Date(v.getFullYear(), v.getMonth() - 1, 1);
+    if (prev.getFullYear() < now.getFullYear() || (prev.getFullYear() === now.getFullYear() && prev.getMonth() < now.getMonth())) return;
+    this.viewMonth.set(prev);
+    this.loadMonthAvailability();
+  }
+
+  nextMonth(): void {
+    const v = this.viewMonth();
+    this.viewMonth.set(new Date(v.getFullYear(), v.getMonth() + 1, 1));
+    this.loadMonthAvailability();
+  }
+
+  selectDay(day: CalendarDay): void {
+    if (day.isPast || !day.hasAvailability) return;
+    this.selectedDate.set(day.date);
+    this.selectedSlot.set(null);
+    this.loadSlots(day.date);
+  }
+
+  loadSlots(date: string): void {
     this.loadingSlots.set(true);
-    const isoDate = this.toIsoDate(this.selectedDate());
-    this.slotService.getAvailableSlots(isoDate).subscribe({
+    this.slotService.getAvailableSlots(date).subscribe({
       next: (slots) => {
         this.slots.set(slots);
         this.loadingSlots.set(false);
@@ -96,9 +187,16 @@ export class ClientBooking {
     return time?.slice(0, 5) ?? time;
   }
 
+  changeService(): void {
+    this.selectedService.set(null);
+    this.selectedDate.set(null);
+    this.selectedSlot.set(null);
+  }
+
   submitBooking(): void {
     const slot = this.selectedSlot();
-    if (!slot || this.form.invalid) {
+    const service = this.selectedService();
+    if (!slot || !service || this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
@@ -109,26 +207,32 @@ export class ClientBooking {
     this.bookingService.createBooking({
       slotId: slot.id,
       clientName: clientName!.trim(),
-      clientPhone: clientPhone!.trim()
+      clientPhone: clientPhone!.trim(),
+      service
     }).subscribe({
       next: () => {
         this.submitting.set(false);
-        this.confirmed.set({ date: slot.date, time: this.formatTime(slot.time) });
+        this.confirmed.set({ date: slot.date, time: this.formatTime(slot.time), service });
         this.selectedSlot.set(null);
         this.form.reset();
-        this.loadSlots();
+        this.loadMonthAvailability();
+        if (this.selectedDate()) this.loadSlots(this.selectedDate()!);
       },
       error: (err) => {
         this.submitting.set(false);
         const message = err?.error?.message || 'No se pudo completar la reserva. Elige otro hueco.';
         this.snackBar.open(message, 'Cerrar', { duration: 5000 });
         this.selectedSlot.set(null);
-        this.loadSlots();
+        if (this.selectedDate()) this.loadSlots(this.selectedDate()!);
+        this.loadMonthAvailability();
       }
     });
   }
 
   newBooking(): void {
     this.confirmed.set(null);
+    this.selectedService.set(null);
+    this.selectedDate.set(null);
+    this.selectedSlot.set(null);
   }
 }

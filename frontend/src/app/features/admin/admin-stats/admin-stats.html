@@ -1,0 +1,46 @@
+<div class="stats-page">
+  <div class="stats-header">
+    <h1>Estadísticas</h1>
+    <mat-button-toggle-group [value]="range()" (change)="setRange($event.value)">
+      <mat-button-toggle value="6m">6 meses</mat-button-toggle>
+      <mat-button-toggle value="12m">12 meses</mat-button-toggle>
+      <mat-button-toggle value="year">Este año</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-row"><mat-spinner diameter="36"></mat-spinner></div>
+  }
+
+  @if (stats(); as s) {
+    <div class="summary-grid">
+      <mat-card class="summary-card">
+        <span class="summary-label">Cortes realizados</span>
+        <span class="summary-value">{{ s.totalBookings }}</span>
+      </mat-card>
+      <mat-card class="summary-card highlight">
+        <span class="summary-label">Ingresos totales</span>
+        <span class="summary-value">{{ s.totalRevenue.toFixed(2) }} €</span>
+      </mat-card>
+      <mat-card class="summary-card">
+        <span class="summary-label">Solo corte</span>
+        <span class="summary-value">{{ corteStats().count }}</span>
+        <span class="summary-sub">{{ corteStats().revenue.toFixed(2) }} €</span>
+      </mat-card>
+      <mat-card class="summary-card">
+        <span class="summary-label">Corte y barba</span>
+        <span class="summary-value">{{ barbaStats().count }}</span>
+        <span class="summary-sub">{{ barbaStats().revenue.toFixed(2) }} €</span>
+      </mat-card>
+    </div>
+
+    <mat-card class="chart-card">
+      <div class="chart-wrapper">
+        <canvas #chartCanvas></canvas>
+      </div>
+      @if (s.series.length === 0) {
+        <p class="empty-state">Todavía no hay reservas confirmadas en este periodo.</p>
+      }
+    </mat-card>
+  }
+</div>

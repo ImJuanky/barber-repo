@@ -1,21 +1,13 @@
 .slots-page {
-  max-width: 1100px;
+  max-width: 900px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 
   h1 {
     font-size: 1.5rem;
-    margin: 0 0 20px;
-  }
-}
-
-.slots-layout {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 20px;
-  align-items: start;
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
+    margin: 0;
   }
 }
 
@@ -25,27 +17,30 @@ mat-card {
 
   h2 {
     font-size: 1rem;
-    font-weight: 500;
-    margin: 0 0 12px;
+    font-weight: 600;
+    margin: 0 0 4px;
   }
 }
 
-.date-field, .time-field {
-  width: 100%;
+.grid-hint {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+  margin: 0 0 16px;
 }
 
-.add-time-row {
+.week-header {
   display: flex;
   align-items: center;
-  gap: 4px;
-}
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 4px;
 
-.time-chips {
-  margin-bottom: 12px;
-}
-
-.create-btn {
-  width: 100%;
+  .week-label {
+    font-weight: 600;
+    text-transform: capitalize;
+    min-width: 140px;
+    text-align: center;
+  }
 }
 
 .loading-row {
@@ -54,16 +49,148 @@ mat-card {
   padding: 24px 0;
 }
 
-.empty-state {
+.week-grid {
+  display: grid;
+  grid-template-columns: 64px repeat(5, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.grid-corner {
+  height: 1px;
+}
+
+.day-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 4px;
+
+  .day-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .day-number {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+}
+
+.time-label {
+  font-size: 0.8rem;
   color: var(--mat-sys-on-surface-variant);
-  text-align: center;
-  padding: 16px 0;
+  text-align: right;
+  padding-right: 4px;
+}
+
+.grid-cell {
+  height: 40px;
+  border-radius: 8px;
+  border: 1.5px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+
+  mat-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+  }
+
+  &.status-empty:hover {
+    border-color: var(--mat-sys-primary);
+    background: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
+  }
+
+  &.status-selected {
+    background: var(--mat-sys-primary);
+    border-color: var(--mat-sys-primary);
+  }
+
+  &.status-available {
+    background: #2e7d32;
+    border-color: #2e7d32;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  &.status-blocked {
+    background: #9e9e9e;
+    border-color: #9e9e9e;
+    color: #fff;
+  }
+
+  &.status-booked {
+    background: var(--mat-sys-tertiary, #1565c0);
+    border-color: var(--mat-sys-tertiary, #1565c0);
+    color: #fff;
+    cursor: default;
+  }
+}
+
+.grid-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 16px;
+  font-size: 0.78rem;
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 4px;
+    border: 1.5px solid var(--mat-sys-outline-variant);
+  }
+
+  .dot-empty { background: var(--mat-sys-surface); }
+  .dot-selected { background: var(--mat-sys-primary); border-color: var(--mat-sys-primary); }
+  .dot-available { background: #2e7d32; border-color: #2e7d32; }
+  .dot-blocked { background: #9e9e9e; border-color: #9e9e9e; }
+  .dot-booked { background: var(--mat-sys-tertiary, #1565c0); border-color: var(--mat-sys-tertiary, #1565c0); }
+}
+
+.grid-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.custom-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+
+  button {
+    height: 56px;
+  }
+}
+
+.custom-date-field {
+  width: 160px;
+}
+
+.custom-time-field {
+  width: 140px;
 }
 
 .slots-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 
   th {
     text-align: left;
@@ -76,14 +203,6 @@ mat-card {
   td {
     padding: 8px;
     border-bottom: 1px solid var(--mat-sys-surface-container-highest);
-  }
-
-  tr.status-blocked {
-    background: color-mix(in srgb, #9e9e9e 8%, transparent);
-  }
-
-  tr.status-booked {
-    background: color-mix(in srgb, var(--mat-sys-primary) 6%, transparent);
   }
 }
 
@@ -105,4 +224,14 @@ mat-card {
   border-radius: 6px;
   padding: 4px 6px;
   font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .week-grid {
+    grid-template-columns: 48px repeat(5, 1fr);
+    font-size: 0.85rem;
+  }
+  .grid-cell {
+    height: 34px;
+  }
 }

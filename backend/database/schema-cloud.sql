@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS bookings (
   client_name VARCHAR(100) NOT NULL,
   client_phone VARCHAR(30) NOT NULL,
   status ENUM('confirmed', 'cancelled') NOT NULL DEFAULT 'confirmed',
+  service ENUM('corte', 'corte_barba') NOT NULL DEFAULT 'corte',
+  price DECIMAL(6,2) NOT NULL DEFAULT 10.00,
   google_event_id VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

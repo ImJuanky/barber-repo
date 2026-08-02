@@ -6,6 +6,7 @@ const { validate } = require('../middleware/validate');
 const slotController = require('../controllers/slotController');
 const bookingController = require('../controllers/bookingController');
 const calendarController = require('../controllers/calendarController');
+const statsController = require('../controllers/statsController');
 
 const router = express.Router();
 
@@ -22,6 +23,11 @@ router.post('/slots',
   validate,
   slotController.createSlots
 );
+router.post('/slots/bulk',
+  [body('slots').isArray({ min: 1 }).withMessage('Debes indicar al menos un hueco.')],
+  validate,
+  slotController.createSlotsBulk
+);
 router.put('/slots/:id', [param('id').isInt()], validate, slotController.updateSlot);
 router.delete('/slots/:id', [param('id').isInt()], validate, slotController.deleteSlot);
 router.patch('/slots/:id/block', [param('id').isInt()], validate, slotController.blockSlot);
@@ -34,5 +40,8 @@ router.delete('/bookings/:id', [param('id').isInt()], validate, bookingControlle
 
 // Calendario
 router.get('/calendar', calendarController.getMonthView);
+
+// Estadísticas
+router.get('/stats', statsController.getStats);
 
 module.exports = router;

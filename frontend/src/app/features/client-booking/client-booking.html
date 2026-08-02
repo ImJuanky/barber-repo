@@ -2,62 +2,107 @@
   <div class="booking-container">
     <header class="booking-header">
       <h1>Reserva tu cita</h1>
-      <p>Elige un día y una hora disponible. Solo te llevará un minuto.</p>
+      <p>Elige el servicio, el día y la hora. Solo te llevará un minuto.</p>
     </header>
 
     @if (confirmed()) {
       <mat-card class="confirmation-card">
         <mat-icon class="confirmation-icon">check_circle</mat-icon>
         <h2>¡Reserva confirmada!</h2>
-        <p>Te esperamos el <strong>{{ confirmed()!.date }}</strong> a las <strong>{{ confirmed()!.time }}</strong>.</p>
+        <p>
+          <strong>{{ serviceLabel(confirmed()!.service) }}</strong> el
+          <strong>{{ confirmed()!.date }}</strong> a las <strong>{{ confirmed()!.time }}</strong>.
+        </p>
         <button mat-flat-button color="primary" (click)="newBooking()">Hacer otra reserva</button>
       </mat-card>
-    } @else {
+    } @else if (!selectedService()) {
       <mat-card class="step-card">
-        <h2 class="step-title"><span class="step-number">1</span> Elige un día</h2>
-        <mat-form-field appearance="outline" class="date-field">
-          <mat-label>Fecha</mat-label>
-          <input
-            matInput
-            [matDatepicker]="picker"
-            [min]="minDate"
-            [value]="selectedDate()"
-            (dateChange)="onDateChange($event.value)"
-            readonly
-          />
-          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-          <mat-datepicker #picker></mat-datepicker>
-        </mat-form-field>
+        <h2 class="step-title"><span class="step-number">1</span> Elige un servicio</h2>
+        <div class="services-grid">
+          @for (service of services; track service.value) {
+            <button type="button" class="service-card" (click)="selectService(service.value)">
+              <mat-icon>{{ service.value === 'corte_barba' ? 'face_retouching_natural' : 'content_cut' }}</mat-icon>
+              <span class="service-name">{{ service.label }}</span>
+              <span class="service-price">{{ service.price }} €</span>
+            </button>
+          }
+        </div>
       </mat-card>
+    } @else {
+      <div class="selected-service-bar">
+        <span>
+          <mat-icon>content_cut</mat-icon>
+          {{ serviceLabel(selectedService()!) }} · {{ servicePrice(selectedService()!) }} €
+        </span>
+        <button mat-button (click)="changeService()">Cambiar</button>
+      </div>
 
-      <mat-card class="step-card">
-        <h2 class="step-title"><span class="step-number">2</span> Elige una hora</h2>
+      <mat-card class="step-card calendar-card">
+        <h2 class="step-title"><span class="step-number">2</span> Elige un día</h2>
 
-        @if (loadingSlots()) {
-          <div class="loading-row">
-            <mat-spinner diameter="32"></mat-spinner>
-          </div>
-        } @else if (slots().length === 0) {
-          <p class="empty-state">No hay huecos disponibles para este día. Prueba con otra fecha.</p>
+        <div class="calendar-header">
+          <button mat-icon-button (click)="prevMonth()" aria-label="Mes anterior">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="month-label">{{ monthLabel() }}</span>
+          <button mat-icon-button (click)="nextMonth()" aria-label="Mes siguiente">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+
+        @if (loadingMonth()) {
+          <div class="loading-row"><mat-spinner diameter="28"></mat-spinner></div>
         } @else {
-          <div class="slots-grid">
-            @for (slot of slots(); track slot.id) {
+          <div class="calendar-grid">
+            @for (wd of weekDays; track wd) {
+              <div class="weekday-cell">{{ wd }}</div>
+            }
+            @for (day of calendarDays(); track day.date) {
               <button
                 type="button"
-                class="slot-btn"
-                [class.selected]="selectedSlot()?.id === slot.id"
-                (click)="selectSlot(slot)"
+                class="day-cell"
+                [class.other-month]="!day.inCurrentMonth"
+                [class.is-past]="day.isPast"
+                [class.has-availability]="day.hasAvailability"
+                [class.selected]="selectedDate() === day.date"
+                [disabled]="day.isPast || !day.hasAvailability"
+                (click)="selectDay(day)"
               >
-                {{ formatTime(slot.time) }}
+                {{ day.dayNumber }}
               </button>
             }
           </div>
         }
       </mat-card>
 
+      @if (selectedDate()) {
+        <mat-card class="step-card">
+          <h2 class="step-title"><span class="step-number">3</span> Elige una hora</h2>
+
+          @if (loadingSlots()) {
+            <div class="loading-row"><mat-spinner diameter="28"></mat-spinner></div>
+          } @else if (slots().length === 0) {
+            <p class="empty-state">Ya no quedan huecos libres este día.</p>
+          } @else {
+            <div class="slots-grid">
+              @for (slot of slots(); track slot.id) {
+                <button
+                  type="button"
+                  class="slot-btn"
+                  [class.selected]="selectedSlot()?.id === slot.id"
+                  (click)="selectSlot(slot)"
+                >
+                  {{ formatTime(slot.time) }}
+                </button>
+              }
+            </div>
+          }
+        </mat-card>
+      }
+
       @if (selectedSlot()) {
         <mat-card class="step-card">
-          <h2 class="step-title"><span class="step-number">3</span> Tus datos</h2>
+          <h2 class="step-title"><span class="step-number">4</span> Tus datos</h2>
           <form [formGroup]="form" (ngSubmit)="submitBooking()" class="booking-form">
             <mat-form-field appearance="outline">
               <mat-label>Nombre completo</mat-label>
@@ -85,7 +130,7 @@
               @if (submitting()) {
                 <mat-spinner diameter="20"></mat-spinner>
               } @else {
-                Confirmar reserva
+                Confirmar reserva · {{ servicePrice(selectedService()!) }} €
               }
             </button>
           </form>
