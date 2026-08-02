@@ -15,7 +15,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 
 // Seguridad básica
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
   origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : 'http://localhost:4200',
   credentials: true
