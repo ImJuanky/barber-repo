@@ -1,0 +1,69 @@
+<div class="calendar-page">
+  <div class="calendar-header">
+    <button mat-icon-button (click)="prevMonth()"><mat-icon>chevron_left</mat-icon></button>
+    <h1>{{ monthLabel() }}</h1>
+    <button mat-icon-button (click)="nextMonth()"><mat-icon>chevron_right</mat-icon></button>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-row"><mat-spinner diameter="32"></mat-spinner></div>
+  } @else {
+    <div class="calendar-grid">
+      @for (wd of weekDays; track wd) {
+        <div class="weekday-cell">{{ wd }}</div>
+      }
+      @for (day of calendarDays(); track day.date) {
+        <button
+          type="button"
+          class="day-cell"
+          [class.other-month]="!day.inCurrentMonth"
+          [class.today]="day.isToday"
+          [class.selected]="selectedDay()?.date === day.date"
+          (click)="selectDay(day)"
+        >
+          <span class="day-number">{{ day.dayNumber }}</span>
+          @if (day.slots.length > 0) {
+            <div class="day-badges">
+              @if (countByStatus(day, 'available') > 0) {
+                <span class="badge badge-available">{{ countByStatus(day, 'available') }}</span>
+              }
+              @if (countByStatus(day, 'booked') > 0) {
+                <span class="badge badge-booked">{{ countByStatus(day, 'booked') }}</span>
+              }
+              @if (countByStatus(day, 'blocked') > 0) {
+                <span class="badge badge-blocked">{{ countByStatus(day, 'blocked') }}</span>
+              }
+            </div>
+          }
+        </button>
+      }
+    </div>
+
+    <div class="legend">
+      <span class="legend-item"><span class="badge badge-available"></span> Disponible</span>
+      <span class="legend-item"><span class="badge badge-booked"></span> Reservado</span>
+      <span class="legend-item"><span class="badge badge-blocked"></span> Bloqueado</span>
+    </div>
+
+    @if (selectedDay()) {
+      <mat-card class="day-detail">
+        <h2>{{ selectedDay()!.date }}</h2>
+        @if (selectedDay()!.slots.length === 0) {
+          <p class="empty-state">No hay huecos creados este día.</p>
+        } @else {
+          <ul class="day-slot-list">
+            @for (slot of selectedDay()!.slots; track slot.id) {
+              <li [class]="'status-' + slot.status">
+                <span class="slot-time">{{ formatTime(slot.time) }}</span>
+                <span class="slot-status">{{ slot.status }}</span>
+                @if (slot.booking) {
+                  <span class="slot-client">{{ slot.booking.clientName }} &middot; {{ slot.booking.clientPhone }}</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </mat-card>
+    }
+  }
+</div>

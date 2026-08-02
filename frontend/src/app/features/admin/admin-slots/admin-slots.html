@@ -1,0 +1,108 @@
+<div class="slots-page">
+  <h1>Gestión de huecos</h1>
+
+  <div class="slots-layout">
+    <mat-card class="date-card">
+      <h2>Día</h2>
+      <mat-form-field appearance="outline" class="date-field">
+        <mat-label>Fecha</mat-label>
+        <input
+          matInput
+          [matDatepicker]="picker"
+          [value]="selectedDate()"
+          (dateChange)="onDateChange($event.value)"
+          readonly
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+      <h2>Añadir horas</h2>
+      <div class="add-time-row">
+        <mat-form-field appearance="outline" class="time-field">
+          <mat-label>Hora (HH:mm)</mat-label>
+          <input matInput [(ngModel)]="newTimeInput" (keyup.enter)="addTimeToList()" placeholder="09:30" />
+        </mat-form-field>
+        <button mat-icon-button color="primary" (click)="addTimeToList()" matTooltip="Añadir hora">
+          <mat-icon>add</mat-icon>
+        </button>
+      </div>
+
+      @if (newTimes().length > 0) {
+        <mat-chip-set class="time-chips">
+          @for (time of newTimes(); track time) {
+            <mat-chip (removed)="removeTimeFromList(time)">
+              {{ time.slice(0, 5) }}
+              <button matChipRemove><mat-icon>cancel</mat-icon></button>
+            </mat-chip>
+          }
+        </mat-chip-set>
+        <button mat-flat-button color="primary" class="create-btn" (click)="createSlots()">
+          Crear huecos para este día
+        </button>
+      }
+    </mat-card>
+
+    <mat-card class="slots-list-card">
+      <h2>Huecos del {{ isoDate }}</h2>
+
+      @if (loading()) {
+        <div class="loading-row"><mat-spinner diameter="32"></mat-spinner></div>
+      } @else if (slots().length === 0) {
+        <p class="empty-state">No hay huecos creados para este día todavía.</p>
+      } @else {
+        <table class="slots-table">
+          <thead>
+            <tr>
+              <th>Hora</th>
+              <th>Estado</th>
+              <th>Cliente</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (slot of slots(); track slot.id) {
+              <tr [class]="'status-' + slot.status">
+                <td>
+                  @if (editingSlotId === slot.id) {
+                    <input class="inline-edit" [(ngModel)]="editTimeValue" (keyup.enter)="saveEdit(slot)" />
+                  } @else {
+                    {{ formatTime(slot.time) }}
+                  }
+                </td>
+                <td><span class="status-chip">{{ statusLabel(slot.status) }}</span></td>
+                <td>
+                  @if (slot.booking) {
+                    {{ slot.booking.clientName }} &middot; {{ slot.booking.clientPhone }}
+                  } @else {
+                    &mdash;
+                  }
+                </td>
+                <td class="actions-cell">
+                  @if (editingSlotId === slot.id) {
+                    <button mat-icon-button (click)="saveEdit(slot)" matTooltip="Guardar">
+                      <mat-icon>check</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="cancelEdit()" matTooltip="Cancelar">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  } @else if (slot.status !== 'booked') {
+                    <button mat-icon-button (click)="startEdit(slot)" matTooltip="Modificar hora">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="toggleBlock(slot)" [matTooltip]="slot.status === 'blocked' ? 'Desbloquear' : 'Bloquear'">
+                      <mat-icon>{{ slot.status === 'blocked' ? 'lock_open' : 'lock' }}</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="deleteSlot(slot)" matTooltip="Eliminar">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </mat-card>
+  </div>
+</div>

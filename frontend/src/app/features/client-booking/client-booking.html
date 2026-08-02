@@ -1,0 +1,96 @@
+<div class="booking-page">
+  <div class="booking-container">
+    <header class="booking-header">
+      <h1>Reserva tu cita</h1>
+      <p>Elige un día y una hora disponible. Solo te llevará un minuto.</p>
+    </header>
+
+    @if (confirmed()) {
+      <mat-card class="confirmation-card">
+        <mat-icon class="confirmation-icon">check_circle</mat-icon>
+        <h2>¡Reserva confirmada!</h2>
+        <p>Te esperamos el <strong>{{ confirmed()!.date }}</strong> a las <strong>{{ confirmed()!.time }}</strong>.</p>
+        <button mat-flat-button color="primary" (click)="newBooking()">Hacer otra reserva</button>
+      </mat-card>
+    } @else {
+      <mat-card class="step-card">
+        <h2 class="step-title"><span class="step-number">1</span> Elige un día</h2>
+        <mat-form-field appearance="outline" class="date-field">
+          <mat-label>Fecha</mat-label>
+          <input
+            matInput
+            [matDatepicker]="picker"
+            [min]="minDate"
+            [value]="selectedDate()"
+            (dateChange)="onDateChange($event.value)"
+            readonly
+          />
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      </mat-card>
+
+      <mat-card class="step-card">
+        <h2 class="step-title"><span class="step-number">2</span> Elige una hora</h2>
+
+        @if (loadingSlots()) {
+          <div class="loading-row">
+            <mat-spinner diameter="32"></mat-spinner>
+          </div>
+        } @else if (slots().length === 0) {
+          <p class="empty-state">No hay huecos disponibles para este día. Prueba con otra fecha.</p>
+        } @else {
+          <div class="slots-grid">
+            @for (slot of slots(); track slot.id) {
+              <button
+                type="button"
+                class="slot-btn"
+                [class.selected]="selectedSlot()?.id === slot.id"
+                (click)="selectSlot(slot)"
+              >
+                {{ formatTime(slot.time) }}
+              </button>
+            }
+          </div>
+        }
+      </mat-card>
+
+      @if (selectedSlot()) {
+        <mat-card class="step-card">
+          <h2 class="step-title"><span class="step-number">3</span> Tus datos</h2>
+          <form [formGroup]="form" (ngSubmit)="submitBooking()" class="booking-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre completo</mat-label>
+              <input matInput formControlName="clientName" maxlength="100" />
+              @if (form.get('clientName')?.invalid && form.get('clientName')?.touched) {
+                <mat-error>Introduce tu nombre (2-100 caracteres).</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono</mat-label>
+              <input matInput formControlName="clientPhone" maxlength="20" />
+              @if (form.get('clientPhone')?.invalid && form.get('clientPhone')?.touched) {
+                <mat-error>Introduce un teléfono válido.</mat-error>
+              }
+            </mat-form-field>
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              class="submit-btn"
+              [disabled]="submitting()"
+            >
+              @if (submitting()) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+                Confirmar reserva
+              }
+            </button>
+          </form>
+        </mat-card>
+      }
+    }
+  </div>
+</div>

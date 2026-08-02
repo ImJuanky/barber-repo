@@ -1,0 +1,153 @@
+.booking-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px 48px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, var(--mat-sys-surface-container-low), var(--mat-sys-surface));
+}
+
+.booking-container {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.booking-header {
+  text-align: center;
+  margin-bottom: 8px;
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0 0 4px;
+    color: var(--mat-sys-on-surface);
+  }
+
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 0.95rem;
+  }
+}
+
+.step-card {
+  padding: 20px;
+  border-radius: 16px;
+}
+
+.step-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin: 0 0 16px;
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.date-field {
+  width: 100%;
+}
+
+.loading-row {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+}
+
+.empty-state {
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+  margin: 12px 0;
+}
+
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 10px;
+}
+
+.slot-btn {
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: var(--mat-sys-primary);
+  }
+
+  &.selected {
+    background: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
+    border-color: var(--mat-sys-primary);
+  }
+}
+
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+.submit-btn {
+  width: 100%;
+  height: 44px;
+  margin-top: 8px;
+}
+
+.confirmation-card {
+  padding: 32px 20px;
+  text-align: center;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+
+  .confirmation-icon {
+    font-size: 56px;
+    width: 56px;
+    height: 56px;
+    color: #2e7d32;
+    margin-bottom: 8px;
+  }
+
+  h2 {
+    margin: 0;
+  }
+
+  button {
+    margin-top: 16px;
+  }
+}
+
+@media (max-width: 400px) {
+  .slots-grid {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  }
+}

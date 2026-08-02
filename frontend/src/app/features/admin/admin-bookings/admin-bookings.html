@@ -1,0 +1,79 @@
+<div class="bookings-page">
+  <div class="bookings-header">
+    <h1>Reservas</h1>
+    <div class="filter-row">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Filtrar por día</mat-label>
+        <input matInput [matDatepicker]="picker" [value]="filterDate()" (dateChange)="onFilterDateChange($event.value)" readonly />
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+      @if (filterDate()) {
+        <button mat-icon-button (click)="clearFilter()" matTooltip="Quitar filtro">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+  </div>
+
+  <mat-card class="bookings-card">
+    @if (loading()) {
+      <div class="loading-row"><mat-spinner diameter="32"></mat-spinner></div>
+    } @else if (bookings().length === 0) {
+      <p class="empty-state">No hay reservas para mostrar.</p>
+    } @else {
+      <table class="bookings-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Cliente</th>
+            <th>Teléfono</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (booking of bookings(); track booking.id) {
+            <tr>
+              <td>{{ booking.slot?.date }}</td>
+              <td>{{ formatTime(booking.slot?.time) }}</td>
+              <td>
+                @if (editingBookingId === booking.id) {
+                  <input class="inline-edit" [(ngModel)]="editName" />
+                } @else {
+                  {{ booking.clientName }}
+                }
+              </td>
+              <td>
+                @if (editingBookingId === booking.id) {
+                  <input class="inline-edit" [(ngModel)]="editPhone" />
+                } @else {
+                  {{ booking.clientPhone }}
+                }
+              </td>
+              <td><span class="status-chip">{{ booking.status === 'confirmed' ? 'Confirmada' : 'Cancelada' }}</span></td>
+              <td class="actions-cell">
+                @if (editingBookingId === booking.id) {
+                  <button mat-icon-button (click)="saveEdit(booking)" matTooltip="Guardar">
+                    <mat-icon>check</mat-icon>
+                  </button>
+                  <button mat-icon-button (click)="cancelEditForm()" matTooltip="Cancelar edición">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                } @else {
+                  <button mat-icon-button (click)="startEdit(booking)" matTooltip="Editar">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button color="warn" (click)="cancelBooking(booking)" matTooltip="Cancelar reserva">
+                    <mat-icon>event_busy</mat-icon>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </mat-card>
+</div>
