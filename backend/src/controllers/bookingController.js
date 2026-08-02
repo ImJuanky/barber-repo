@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const { sequelize, Slot, Booking } = require('../models');
 const googleCalendarService = require('../services/googleCalendarService');
 const whatsappService = require('../services/whatsappService');
+const ntfyService = require('../services/ntfyService');
 const { isValidService, getServicePrice, getServiceLabel } = require('../utils/services');
 
 function normalizePhone(phone) {
@@ -63,6 +64,14 @@ async function createBooking(req, res, next) {
     });
 
     whatsappService.notifyNewBooking({
+      clientName,
+      clientPhone,
+      service: getServiceLabel(service),
+      date: slot.date,
+      time: slot.time,
+      price
+    });
+    ntfyService.notifyNewBooking({
       clientName,
       clientPhone,
       service: getServiceLabel(service),
@@ -178,6 +187,7 @@ async function cancelBooking(req, res, next) {
       googleCalendarService.deleteBookingEvent(googleEventId);
     }
     whatsappService.notifyCancelledBooking(notifyInfo);
+    ntfyService.notifyCancelledBooking(notifyInfo);
 
     res.json({ message: 'Reserva cancelada y hueco liberado.' });
   } catch (err) {
@@ -272,6 +282,7 @@ async function cancelBookingPublic(req, res, next) {
       googleCalendarService.deleteBookingEvent(googleEventId);
     }
     whatsappService.notifyCancelledBooking(notifyInfo);
+    ntfyService.notifyCancelledBooking(notifyInfo);
 
     res.json({ message: 'Tu cita se ha cancelado correctamente.' });
   } catch (err) {
