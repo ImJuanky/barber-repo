@@ -10,7 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { SlotService } from '../../core/services/slot.service';
-import { BookingService } from '../../core/services/booking.service';
+import { BookingService, CancelableBooking } from '../../core/services/booking.service';
 import { Slot } from '../../core/models/slot.model';
 import { SERVICES, ServiceType } from '../../core/models/booking.model';
 
@@ -96,6 +96,17 @@ export class ClientBooking {
     clientName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
     clientPhone: ['', [Validators.required, Validators.pattern(/^[0-9+\s()-]{6,20}$/)]]
   });
+
+  // --- Cancelar una cita ---
+  readonly mode = signal<'book' | 'cancel'>('book');
+  readonly cancelForm = this.fb.group({
+    clientName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+    clientPhone: ['', [Validators.required, Validators.pattern(/^[0-9+\s()-]{6,20}$/)]]
+  });
+  readonly searching = signal(false);
+  readonly searchResults = signal<CancelableBooking[] | null>(null);
+  readonly cancellingId = signal<number | null>(null);
+  readonly cancelledOne = signal(false);
 
   constructor() {
     this.loadMonthAvailability();
@@ -234,5 +245,61 @@ export class ClientBooking {
     this.selectedService.set(null);
     this.selectedDate.set(null);
     this.selectedSlot.set(null);
+  }
+
+  // --- Cancelar una cita ---
+  goToCancel(): void {
+    this.mode.set('cancel');
+    this.searchResults.set(null);
+    this.cancelledOne.set(false);
+    this.cancelForm.reset();
+  }
+
+  backToBooking(): void {
+    this.mode.set('book');
+  }
+
+  searchMyBookings(): void {
+    if (this.cancelForm.invalid) {
+      this.cancelForm.markAllAsTouched();
+      return;
+    }
+
+    this.searching.set(true);
+    this.cancelledOne.set(false);
+    const { clientName, clientPhone } = this.cancelForm.getRawValue();
+
+    this.bookingService.findMyBookings(clientName!.trim(), clientPhone!.trim()).subscribe({
+      next: (results) => {
+        this.searchResults.set(results);
+        this.searching.set(false);
+      },
+      error: () => {
+        this.searching.set(false);
+        this.snackBar.open('No se pudieron buscar tus citas. Inténtalo de nuevo.', 'Cerrar', { duration: 4000 });
+      }
+    });
+  }
+
+  cancelMyBooking(booking: CancelableBooking): void {
+    if (!confirm(`¿Seguro que quieres cancelar tu cita del ${booking.date} a las ${this.formatTime(booking.time)}?`)) {
+      return;
+    }
+
+    this.cancellingId.set(booking.id);
+    const { clientName, clientPhone } = this.cancelForm.getRawValue();
+
+    this.bookingService.cancelMyBooking(booking.id, clientName!.trim(), clientPhone!.trim()).subscribe({
+      next: () => {
+        this.cancellingId.set(null);
+        this.cancelledOne.set(true);
+        this.searchResults.set((this.searchResults() || []).filter((b) => b.id !== booking.id));
+      },
+      error: (err) => {
+        this.cancellingId.set(null);
+        const message = err?.error?.message || 'No se pudo cancelar la cita.';
+        this.snackBar.open(message, 'Cerrar', { duration: 5000 });
+      }
+    });
   }
 }

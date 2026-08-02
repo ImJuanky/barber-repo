@@ -5,7 +5,75 @@
       <p>Elige el servicio, el día y la hora. Solo te llevará un minuto.</p>
     </header>
 
-    @if (confirmed()) {
+    @if (mode() === 'cancel') {
+      <mat-card class="step-card cancel-card">
+        <button mat-button class="back-link" (click)="backToBooking()">
+          <mat-icon>arrow_back</mat-icon> Volver a reservar
+        </button>
+        <h2 class="step-title">¿Quieres cancelar una cita?</h2>
+        <p class="cancel-hint">Introduce el nombre y el teléfono con los que reservaste.</p>
+
+        <form [formGroup]="cancelForm" (ngSubmit)="searchMyBookings()" class="booking-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre completo</mat-label>
+            <input matInput formControlName="clientName" maxlength="100" />
+            @if (cancelForm.get('clientName')?.invalid && cancelForm.get('clientName')?.touched) {
+              <mat-error>Introduce tu nombre (2-100 caracteres).</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Teléfono</mat-label>
+            <input matInput formControlName="clientPhone" maxlength="20" />
+            @if (cancelForm.get('clientPhone')?.invalid && cancelForm.get('clientPhone')?.touched) {
+              <mat-error>Introduce un teléfono válido.</mat-error>
+            }
+          </mat-form-field>
+
+          <button mat-flat-button color="primary" type="submit" class="submit-btn" [disabled]="searching()">
+            @if (searching()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              Buscar mis citas
+            }
+          </button>
+        </form>
+
+        @if (cancelledOne() && (searchResults()?.length ?? 0) === 0) {
+          <p class="empty-state success-state">
+            <mat-icon>check_circle</mat-icon> Tu cita se ha cancelado correctamente.
+          </p>
+        } @else if (searchResults() !== null) {
+          @if (searchResults()!.length === 0) {
+            <p class="empty-state">No hemos encontrado citas futuras con esos datos.</p>
+          } @else {
+            <div class="my-bookings-list">
+              @for (booking of searchResults(); track booking.id) {
+                <div class="my-booking-row">
+                  <div class="my-booking-info">
+                    <strong>{{ booking.serviceLabel }}</strong>
+                    <span>{{ booking.date }} a las {{ formatTime(booking.time) }}</span>
+                    <span class="my-booking-price">{{ booking.price }} €</span>
+                  </div>
+                  <button
+                    mat-stroked-button
+                    color="warn"
+                    [disabled]="cancellingId() === booking.id"
+                    (click)="cancelMyBooking(booking)"
+                  >
+                    @if (cancellingId() === booking.id) {
+                      <mat-spinner diameter="18"></mat-spinner>
+                    } @else {
+                      Cancelar
+                    }
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        }
+      </mat-card>
+    } @else if (confirmed()) {
       <mat-card class="confirmation-card">
         <mat-icon class="confirmation-icon">check_circle</mat-icon>
         <h2>¡Reserva confirmada!</h2>
@@ -28,6 +96,7 @@
           }
         </div>
       </mat-card>
+      <button mat-button class="cancel-link" (click)="goToCancel()">¿Quieres cancelar una cita?</button>
     } @else {
       <div class="selected-service-bar">
         <span>

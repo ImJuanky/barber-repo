@@ -1,6 +1,6 @@
 const express = require('express');
-const { body } = require('express-validator');
-const { createBooking } = require('../controllers/bookingController');
+const { body, query, param } = require('express-validator');
+const { createBooking, findBookings, cancelBookingPublic } = require('../controllers/bookingController');
 const { validate } = require('../middleware/validate');
 const { bookingLimiter } = require('../middleware/rateLimiter');
 
@@ -17,6 +17,29 @@ router.post('/',
   ],
   validate,
   createBooking
+);
+
+// Buscar mis reservas para poder cancelarlas (público, nombre + teléfono)
+router.get('/find',
+  bookingLimiter,
+  [
+    query('clientName').trim().isLength({ min: 2, max: 100 }).withMessage('Nombre inválido.'),
+    query('clientPhone').trim().isLength({ min: 6, max: 20 }).withMessage('Teléfono inválido.')
+  ],
+  validate,
+  findBookings
+);
+
+// Cancelar una cita propia (público, exige nombre + teléfono coincidentes)
+router.post('/:id/cancel',
+  bookingLimiter,
+  [
+    param('id').isInt({ min: 1 }),
+    body('clientName').trim().isLength({ min: 2, max: 100 }).withMessage('Nombre inválido.'),
+    body('clientPhone').trim().isLength({ min: 6, max: 20 }).withMessage('Teléfono inválido.')
+  ],
+  validate,
+  cancelBookingPublic
 );
 
 module.exports = router;
