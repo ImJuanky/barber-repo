@@ -1,30 +1,24 @@
 const { Op } = require('sequelize');
-const { sequelize, Slot, Booking } = require('../models');
+const { sequelize, Slot, Booking, Customer } = require('../models');
 const googleCalendarService = require('../services/googleCalendarService');
 const ntfyService = require('../services/ntfyService');
 const { isValidService, getServicePrice, getServiceLabel } = require('../utils/services');
 
-function normalizePhone(phone) {
-  return String(phone || '').replace(/\D/g, '');
-}
-
-// Compara los últimos 9 dígitos para no depender de si se escribió o no el
-// prefijo de país (+34, 0034, etc.).
-function phonesMatch(a, b) {
-  const na = normalizePhone(a);
-  const nb = normalizePhone(b);
-  if (!na || !nb) return false;
-  return na.slice(-9) === nb.slice(-9);
-}
-
-// POST /api/bookings  { slotId, clientName, clientPhone, service }  (público)
+// POST /api/bookings  { slotId, service }  (requiere sesión de cliente)
+// El nombre y el teléfono se toman del cliente autenticado, nunca del body.
 async function createBooking(req, res, next) {
-  const { slotId, clientName, clientPhone } = req.body;
+  const { slotId } = req.body;
   const service = isValidService(req.body.service) ? req.body.service : 'corte';
   const price = getServicePrice(service);
 
   const t = await sequelize.transaction();
   try {
+    const customer = await Customer.findByPk(req.customer.sub, { transaction: t });
+    if (!customer) {
+      await t.rollback();
+      return res.status(401).json({ message: 'Tu sesión ha caducado. Vuelve a iniciar sesión.' });
+    }
+
     const slot = await Slot.findByPk(slotId, { transaction: t, lock: t.LOCK.UPDATE });
 
     if (!slot) {
@@ -36,8 +30,12 @@ async function createBooking(req, res, next) {
       return res.status(409).json({ message: 'Ese hueco ya no está disponible. Elige otra hora.' });
     }
 
+    const clientName = customer.name;
+    const clientPhone = customer.phone;
+
     const booking = await Booking.create({
       slotId: slot.id,
+      customerId: customer.id,
       clientName,
       clientPhone,
       service,
@@ -186,19 +184,13 @@ async function cancelBooking(req, res, next) {
   }
 }
 
-// GET /api/bookings/find?clientName=&clientPhone=  (público)
-// Devuelve las reservas futuras confirmadas de un cliente para que pueda
-// elegir cuál cancelar. Exige nombre Y teléfono coincidentes.
-async function findBookings(req, res, next) {
+// GET /api/bookings/mine  (requiere sesión de cliente)
+// Devuelve las reservas futuras confirmadas del cliente autenticado.
+async function listMyBookings(req, res, next) {
   try {
-    const { clientName, clientPhone } = req.query;
-    if (!clientName || !clientPhone) {
-      return res.status(400).json({ message: 'Indica tu nombre y tu teléfono.' });
-    }
-
     const today = new Date().toISOString().slice(0, 10);
     const bookings = await Booking.findAll({
-      where: { status: 'confirmed' },
+      where: { status: 'confirmed', customerId: req.customer.sub },
       include: [{
         model: Slot,
         as: 'slot',
@@ -208,12 +200,7 @@ async function findBookings(req, res, next) {
       order: [[{ model: Slot, as: 'slot' }, 'date', 'ASC'], [{ model: Slot, as: 'slot' }, 'time', 'ASC']]
     });
 
-    const nameNormalized = String(clientName).trim().toLowerCase();
-    const matches = bookings.filter((b) =>
-      b.clientName.trim().toLowerCase() === nameNormalized && phonesMatch(b.clientPhone, clientPhone)
-    );
-
-    res.json(matches.map((b) => ({
+    res.json(bookings.map((b) => ({
       id: b.id,
       clientName: b.clientName,
       service: b.service,
@@ -227,10 +214,9 @@ async function findBookings(req, res, next) {
   }
 }
 
-// POST /api/bookings/:id/cancel  { clientName, clientPhone }  (público)
-// Cancela una cita del propio cliente, verificando que el nombre y el
-// teléfono coincidan con los de la reserva antes de tocar nada.
-async function cancelBookingPublic(req, res, next) {
+// POST /api/bookings/:id/cancel  (requiere sesión de cliente)
+// Cancela una cita del propio cliente, verificando que le pertenezca.
+async function cancelMyBooking(req, res, next) {
   const t = await sequelize.transaction();
   try {
     const booking = await Booking.findByPk(req.params.id, {
@@ -243,11 +229,9 @@ async function cancelBookingPublic(req, res, next) {
       return res.status(404).json({ message: 'Reserva no encontrada.' });
     }
 
-    const { clientName, clientPhone } = req.body;
-    const nameMatches = booking.clientName.trim().toLowerCase() === String(clientName || '').trim().toLowerCase();
-    if (!nameMatches || !phonesMatch(booking.clientPhone, clientPhone)) {
+    if (booking.customerId !== req.customer.sub) {
       await t.rollback();
-      return res.status(403).json({ message: 'El nombre o el teléfono no coinciden con esta reserva.' });
+      return res.status(403).json({ message: 'Esta reserva no pertenece a tu cuenta.' });
     }
 
     const slot = await Slot.findByPk(booking.slotId, { transaction: t, lock: t.LOCK.UPDATE });
@@ -285,6 +269,6 @@ module.exports = {
   listBookings,
   updateBooking,
   cancelBooking,
-  findBookings,
-  cancelBookingPublic
+  listMyBookings,
+  cancelMyBooking
 };

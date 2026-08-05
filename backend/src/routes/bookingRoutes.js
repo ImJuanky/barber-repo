@@ -1,59 +1,39 @@
 const express = require('express');
-const { body, query, param } = require('express-validator');
-const { createBooking, findBookings, cancelBookingPublic } = require('../controllers/bookingController');
+const { body, param } = require('express-validator');
+const { createBooking, listMyBookings, cancelMyBooking } = require('../controllers/bookingController');
 const { validate } = require('../middleware/validate');
+const { requireCustomerAuth } = require('../middleware/auth');
 const { bookingLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
-// Móvil español: 9 dígitos empezando por 6 o 7, con prefijo opcional +34 / 0034 / 34
-// y con espacios, guiones o paréntesis que se ignoran al comprobar el formato.
-function isValidSpanishMobile(rawPhone) {
-  const digits = String(rawPhone || '').replace(/\D/g, '');
-  const withoutPrefix = digits.replace(/^(0034|34)/, '');
-  return /^[67]\d{8}$/.test(withoutPrefix);
-}
-
+// Reservar un hueco. Requiere sesión de cliente; el nombre y el teléfono se
+// toman del cliente autenticado, no del body (evita suplantaciones).
 router.post('/',
+  requireCustomerAuth,
   bookingLimiter,
   [
     body('slotId').isInt({ min: 1 }).withMessage('Hueco inválido.'),
-    body('clientName').trim().isLength({ min: 2, max: 100 }).withMessage('El nombre debe tener entre 2 y 100 caracteres.'),
-    body('clientPhone').trim().isLength({ min: 6, max: 20 }).withMessage('Teléfono inválido.')
-      .matches(/^[0-9+\s()-]+$/).withMessage('El teléfono contiene caracteres no válidos.')
-      .custom((value) => {
-        if (!isValidSpanishMobile(value)) {
-          throw new Error('Introduce un número de móvil español válido (ej. 612345678).');
-        }
-        return true;
-      }),
     body('service').isIn(['corte', 'corte_barba']).withMessage('Servicio inválido.')
   ],
   validate,
   createBooking
 );
 
-// Buscar mis reservas para poder cancelarlas (público, nombre + teléfono)
-router.get('/find',
+// Mis reservas futuras confirmadas (requiere sesión de cliente).
+router.get('/mine',
+  requireCustomerAuth,
   bookingLimiter,
-  [
-    query('clientName').trim().isLength({ min: 2, max: 100 }).withMessage('Nombre inválido.'),
-    query('clientPhone').trim().isLength({ min: 6, max: 20 }).withMessage('Teléfono inválido.')
-  ],
-  validate,
-  findBookings
+  listMyBookings
 );
 
-// Cancelar una cita propia (público, exige nombre + teléfono coincidentes)
+// Cancelar una cita propia (requiere sesión de cliente y que la reserva le pertenezca).
 router.post('/:id/cancel',
+  requireCustomerAuth,
   bookingLimiter,
-  [
-    param('id').isInt({ min: 1 }),
-    body('clientName').trim().isLength({ min: 2, max: 100 }).withMessage('Nombre inválido.'),
-    body('clientPhone').trim().isLength({ min: 6, max: 20 }).withMessage('Teléfono inválido.')
-  ],
+  [param('id').isInt({ min: 1 })],
   validate,
-  cancelBookingPublic
+  cancelMyBooking
 );
 
 module.exports = router;

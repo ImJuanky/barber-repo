@@ -29,7 +29,5 @@ export interface Booking {
 
 export interface CreateBookingPayload {
   slotId: number;
-  clientName: string;
-  clientPhone: string;
   service: ServiceType;
 }

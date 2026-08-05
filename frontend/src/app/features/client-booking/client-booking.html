@@ -2,199 +2,240 @@
   <div class="booking-container">
     <header class="booking-header">
       <h1>Reserva tu cita</h1>
-      <p>Elige el servicio, el día y la hora. Solo te llevará un minuto.</p>
+      @if (customerAuth.currentCustomer(); as customer) {
+        <p>Hola, {{ customer.name }}. Elige el servicio, el día y la hora.</p>
+      } @else {
+        <p>Inicia sesión o crea una cuenta para reservar tu cita.</p>
+      }
     </header>
 
-    @if (mode() === 'cancel') {
-      <mat-card class="step-card cancel-card">
-        <button mat-button class="back-link" (click)="backToBooking()">
-          <mat-icon>arrow_back</mat-icon> Volver a reservar
-        </button>
-        <h2 class="step-title">¿Quieres cancelar una cita?</h2>
-        <p class="cancel-hint">Introduce el nombre y el teléfono con los que reservaste.</p>
-
-        <form [formGroup]="cancelForm" (ngSubmit)="searchMyBookings()" class="booking-form">
-          <mat-form-field appearance="outline">
-            <mat-label>Nombre completo</mat-label>
-            <input matInput formControlName="clientName" maxlength="100" />
-            @if (cancelForm.get('clientName')?.invalid && cancelForm.get('clientName')?.touched) {
-              <mat-error>Introduce tu nombre (2-100 caracteres).</mat-error>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Teléfono</mat-label>
-            <input matInput formControlName="clientPhone" maxlength="20" />
-            @if (cancelForm.get('clientPhone')?.invalid && cancelForm.get('clientPhone')?.touched) {
-              <mat-error>Introduce un teléfono válido.</mat-error>
-            }
-          </mat-form-field>
-
-          <button mat-flat-button color="primary" type="submit" class="submit-btn" [disabled]="searching()">
-            @if (searching()) {
-              <mat-spinner diameter="20"></mat-spinner>
-            } @else {
-              Buscar mis citas
-            }
-          </button>
-        </form>
-
-        @if (cancelledOne() && (searchResults()?.length ?? 0) === 0) {
-          <p class="empty-state success-state">
-            <mat-icon>check_circle</mat-icon> Tu cita se ha cancelado correctamente.
-          </p>
-        } @else if (searchResults() !== null) {
-          @if (searchResults()!.length === 0) {
-            <p class="empty-state">No hemos encontrado citas futuras con esos datos.</p>
-          } @else {
-            <div class="my-bookings-list">
-              @for (booking of searchResults(); track booking.id) {
-                <div class="my-booking-row">
-                  <div class="my-booking-info">
-                    <strong>{{ booking.serviceLabel }}</strong>
-                    <span>{{ booking.date }} a las {{ formatTime(booking.time) }}</span>
-                    <span class="my-booking-price">{{ booking.price }} €</span>
-                  </div>
-                  <button
-                    mat-stroked-button
-                    color="warn"
-                    [disabled]="cancellingId() === booking.id"
-                    (click)="cancelMyBooking(booking)"
-                  >
-                    @if (cancellingId() === booking.id) {
-                      <mat-spinner diameter="18"></mat-spinner>
-                    } @else {
-                      Cancelar
-                    }
-                  </button>
-                </div>
+    @if (!customerAuth.currentCustomer()) {
+      <mat-card class="step-card auth-card">
+        @if (authView() === 'login') {
+          <h2 class="step-title">Iniciar sesión</h2>
+          <form [formGroup]="loginForm" (ngSubmit)="submitLogin()" class="booking-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono</mat-label>
+              <input matInput formControlName="phone" maxlength="20" placeholder="612345678" />
+              @if (loginForm.get('phone')?.invalid && loginForm.get('phone')?.touched) {
+                <mat-error>Introduce un número de móvil español válido.</mat-error>
               }
-            </div>
-          }
-        }
-      </mat-card>
-    } @else if (confirmed()) {
-      <mat-card class="confirmation-card">
-        <mat-icon class="confirmation-icon">check_circle</mat-icon>
-        <h2>¡Reserva confirmada!</h2>
-        <p>
-          <strong>{{ serviceLabel(confirmed()!.service) }}</strong> el
-          <strong>{{ confirmed()!.date }}</strong> a las <strong>{{ confirmed()!.time }}</strong>.
-        </p>
-        <button mat-flat-button color="primary" (click)="newBooking()">Hacer otra reserva</button>
-      </mat-card>
-    } @else if (!selectedService()) {
-      <mat-card class="step-card">
-        <h2 class="step-title"><span class="step-number">1</span> Elige un servicio</h2>
-        <div class="services-grid">
-          @for (service of services; track service.value) {
-            <button type="button" class="service-card" (click)="selectService(service.value)">
-              <mat-icon>{{ service.value === 'corte_barba' ? 'face_retouching_natural' : 'content_cut' }}</mat-icon>
-              <span class="service-name">{{ service.label }}</span>
-              <span class="service-price">{{ service.price }} €</span>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Contraseña</mat-label>
+              <input matInput type="password" formControlName="password" />
+              @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+                <mat-error>Introduce tu contraseña.</mat-error>
+              }
+            </mat-form-field>
+
+            <button mat-flat-button color="primary" type="submit" class="submit-btn" [disabled]="authLoading()">
+              @if (authLoading()) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+                Iniciar sesión
+              }
             </button>
-          }
-        </div>
-      </mat-card>
-      <button mat-button class="cancel-link" (click)="goToCancel()">¿Quieres cancelar una cita?</button>
-    } @else {
-      <div class="selected-service-bar">
-        <span>
-          <mat-icon>content_cut</mat-icon>
-          {{ serviceLabel(selectedService()!) }} · {{ servicePrice(selectedService()!) }} €
-        </span>
-        <button mat-button (click)="changeService()">Cambiar</button>
-      </div>
-
-      <mat-card class="step-card calendar-card">
-        <h2 class="step-title"><span class="step-number">2</span> Elige un día</h2>
-
-        <div class="calendar-header">
-          <button mat-icon-button (click)="prevMonth()" aria-label="Mes anterior">
-            <mat-icon>chevron_left</mat-icon>
-          </button>
-          <span class="month-label">{{ monthLabel() }}</span>
-          <button mat-icon-button (click)="nextMonth()" aria-label="Mes siguiente">
-            <mat-icon>chevron_right</mat-icon>
-          </button>
-        </div>
-
-        @if (loadingMonth()) {
-          <div class="loading-row"><mat-spinner diameter="28"></mat-spinner></div>
+          </form>
+          <button mat-button class="cancel-link" (click)="goToRegister()">¿No tienes cuenta? Regístrate</button>
         } @else {
-          <div class="calendar-grid">
-            @for (wd of weekDays; track wd) {
-              <div class="weekday-cell">{{ wd }}</div>
-            }
-            @for (day of calendarDays(); track day.date) {
-              <button
-                type="button"
-                class="day-cell"
-                [class.other-month]="!day.inCurrentMonth"
-                [class.is-past]="day.isPast"
-                [class.has-availability]="day.hasAvailability"
-                [class.selected]="selectedDate() === day.date"
-                [disabled]="day.isPast || !day.hasAvailability"
-                (click)="selectDay(day)"
-              >
-                {{ day.dayNumber }}
-              </button>
-            }
-          </div>
-        }
-      </mat-card>
-
-      @if (selectedDate()) {
-        <mat-card class="step-card">
-          <h2 class="step-title"><span class="step-number">3</span> Elige una hora</h2>
-
-          @if (loadingSlots()) {
-            <div class="loading-row"><mat-spinner diameter="28"></mat-spinner></div>
-          } @else if (slots().length === 0) {
-            <p class="empty-state">Ya no quedan huecos libres este día.</p>
-          } @else {
-            <div class="slots-grid">
-              @for (slot of slots(); track slot.id) {
-                <button
-                  type="button"
-                  class="slot-btn"
-                  [class.selected]="selectedSlot()?.id === slot.id"
-                  (click)="selectSlot(slot)"
-                >
-                  {{ formatTime(slot.time) }}
-                </button>
-              }
-            </div>
-          }
-        </mat-card>
-      }
-
-      @if (selectedSlot()) {
-        <mat-card class="step-card">
-          <h2 class="step-title"><span class="step-number">4</span> Tus datos</h2>
-          <form [formGroup]="form" (ngSubmit)="submitBooking()" class="booking-form">
+          <h2 class="step-title">Crear cuenta</h2>
+          <form [formGroup]="registerForm" (ngSubmit)="submitRegister()" class="booking-form">
             <mat-form-field appearance="outline">
               <mat-label>Nombre completo</mat-label>
-              <input matInput formControlName="clientName" maxlength="100" />
-              @if (form.get('clientName')?.invalid && form.get('clientName')?.touched) {
+              <input matInput formControlName="name" maxlength="100" />
+              @if (registerForm.get('name')?.invalid && registerForm.get('name')?.touched) {
                 <mat-error>Introduce tu nombre (2-100 caracteres).</mat-error>
               }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Teléfono</mat-label>
-              <input matInput formControlName="clientPhone" maxlength="20" placeholder="612345678" />
-              @if (form.get('clientPhone')?.invalid && form.get('clientPhone')?.touched) {
+              <input matInput formControlName="phone" maxlength="20" placeholder="612345678" />
+              @if (registerForm.get('phone')?.invalid && registerForm.get('phone')?.touched) {
                 <mat-error>Introduce un número de móvil español válido (ej. 612345678).</mat-error>
               }
             </mat-form-field>
 
+            <mat-form-field appearance="outline">
+              <mat-label>Contraseña</mat-label>
+              <input matInput type="password" formControlName="password" />
+              @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
+                <mat-error>La contraseña debe tener al menos 6 caracteres.</mat-error>
+              }
+            </mat-form-field>
+
+            <button mat-flat-button color="primary" type="submit" class="submit-btn" [disabled]="authLoading()">
+              @if (authLoading()) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+                Crear cuenta
+              }
+            </button>
+          </form>
+          <button mat-button class="cancel-link" (click)="goToLogin()">¿Ya tienes cuenta? Inicia sesión</button>
+        }
+      </mat-card>
+    } @else {
+      <button mat-button class="logout-link" (click)="logout()">
+        <mat-icon>logout</mat-icon> Cerrar sesión
+      </button>
+
+      @if (mode() === 'cancel') {
+        <mat-card class="step-card cancel-card">
+          <button mat-button class="back-link" (click)="backToBooking()">
+            <mat-icon>arrow_back</mat-icon> Volver a reservar
+          </button>
+          <h2 class="step-title">Tus citas</h2>
+
+          @if (searching()) {
+            <div class="loading-row"><mat-spinner diameter="28"></mat-spinner></div>
+          } @else if (cancelledOne() && (searchResults()?.length ?? 0) === 0) {
+            <p class="empty-state success-state">
+              <mat-icon>check_circle</mat-icon> Tu cita se ha cancelado correctamente.
+            </p>
+          } @else if (searchResults() !== null) {
+            @if (searchResults()!.length === 0) {
+              <p class="empty-state">No tienes citas futuras.</p>
+            } @else {
+              <div class="my-bookings-list">
+                @for (booking of searchResults(); track booking.id) {
+                  <div class="my-booking-row">
+                    <div class="my-booking-info">
+                      <strong>{{ booking.serviceLabel }}</strong>
+                      <span>{{ booking.date }} a las {{ formatTime(booking.time) }}</span>
+                      <span class="my-booking-price">{{ booking.price }} €</span>
+                    </div>
+                    <button
+                      mat-stroked-button
+                      color="warn"
+                      [disabled]="cancellingId() === booking.id"
+                      (click)="cancelMyBooking(booking)"
+                    >
+                      @if (cancellingId() === booking.id) {
+                        <mat-spinner diameter="18"></mat-spinner>
+                      } @else {
+                        Cancelar
+                      }
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </mat-card>
+      } @else if (confirmed()) {
+        <mat-card class="confirmation-card">
+          <mat-icon class="confirmation-icon">check_circle</mat-icon>
+          <h2>¡Reserva confirmada!</h2>
+          <p>
+            <strong>{{ serviceLabel(confirmed()!.service) }}</strong> el
+            <strong>{{ confirmed()!.date }}</strong> a las <strong>{{ confirmed()!.time }}</strong>.
+          </p>
+          <button mat-flat-button color="primary" (click)="newBooking()">Hacer otra reserva</button>
+        </mat-card>
+      } @else if (!selectedService()) {
+        <mat-card class="step-card">
+          <h2 class="step-title"><span class="step-number">1</span> Elige un servicio</h2>
+          <div class="services-grid">
+            @for (service of services; track service.value) {
+              <button type="button" class="service-card" (click)="selectService(service.value)">
+                <mat-icon>{{ service.value === 'corte_barba' ? 'face_retouching_natural' : 'content_cut' }}</mat-icon>
+                <span class="service-name">{{ service.label }}</span>
+                <span class="service-price">{{ service.price }} €</span>
+              </button>
+            }
+          </div>
+        </mat-card>
+        <button mat-button class="cancel-link" (click)="goToCancel()">¿Quieres cancelar una cita?</button>
+      } @else {
+        <div class="selected-service-bar">
+          <span>
+            <mat-icon>content_cut</mat-icon>
+            {{ serviceLabel(selectedService()!) }} · {{ servicePrice(selectedService()!) }} €
+          </span>
+          <button mat-button (click)="changeService()">Cambiar</button>
+        </div>
+
+        <mat-card class="step-card calendar-card">
+          <h2 class="step-title"><span class="step-number">2</span> Elige un día</h2>
+
+          <div class="calendar-header">
+            <button mat-icon-button (click)="prevMonth()" aria-label="Mes anterior">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            <span class="month-label">{{ monthLabel() }}</span>
+            <button mat-icon-button (click)="nextMonth()" aria-label="Mes siguiente">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+
+          @if (loadingMonth()) {
+            <div class="loading-row"><mat-spinner diameter="28"></mat-spinner></div>
+          } @else {
+            <div class="calendar-grid">
+              @for (wd of weekDays; track wd) {
+                <div class="weekday-cell">{{ wd }}</div>
+              }
+              @for (day of calendarDays(); track day.date) {
+                <button
+                  type="button"
+                  class="day-cell"
+                  [class.other-month]="!day.inCurrentMonth"
+                  [class.is-past]="day.isPast"
+                  [class.has-availability]="day.hasAvailability"
+                  [class.selected]="selectedDate() === day.date"
+                  [disabled]="day.isPast || !day.hasAvailability"
+                  (click)="selectDay(day)"
+                >
+                  {{ day.dayNumber }}
+                </button>
+              }
+            </div>
+          }
+        </mat-card>
+
+        @if (selectedDate()) {
+          <mat-card class="step-card">
+            <h2 class="step-title"><span class="step-number">3</span> Elige una hora</h2>
+
+            @if (loadingSlots()) {
+              <div class="loading-row"><mat-spinner diameter="28"></mat-spinner></div>
+            } @else if (slots().length === 0) {
+              <p class="empty-state">Ya no quedan huecos libres este día.</p>
+            } @else {
+              <div class="slots-grid">
+                @for (slot of slots(); track slot.id) {
+                  <button
+                    type="button"
+                    class="slot-btn"
+                    [class.selected]="selectedSlot()?.id === slot.id"
+                    (click)="selectSlot(slot)"
+                  >
+                    {{ formatTime(slot.time) }}
+                  </button>
+                }
+              </div>
+            }
+          </mat-card>
+        }
+
+        @if (selectedSlot()) {
+          <mat-card class="step-card">
+            <h2 class="step-title"><span class="step-number">4</span> Confirmar</h2>
+            <p class="confirm-summary">
+              <strong>{{ serviceLabel(selectedService()!) }}</strong> el
+              <strong>{{ selectedSlot()!.date }}</strong> a las
+              <strong>{{ formatTime(selectedSlot()!.time) }}</strong>.
+            </p>
             <button
               mat-flat-button
               color="primary"
-              type="submit"
+              type="button"
               class="submit-btn"
               [disabled]="submitting()"
+              (click)="submitBooking()"
             >
               @if (submitting()) {
                 <mat-spinner diameter="20"></mat-spinner>
@@ -202,8 +243,8 @@
                 Confirmar reserva · {{ servicePrice(selectedService()!) }} €
               }
             </button>
-          </form>
-        </mat-card>
+          </mat-card>
+        }
       }
     }
   </div>

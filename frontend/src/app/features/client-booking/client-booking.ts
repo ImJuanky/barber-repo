@@ -11,6 +11,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { SlotService } from '../../core/services/slot.service';
 import { BookingService, CancelableBooking } from '../../core/services/booking.service';
+import { CustomerAuthService } from '../../core/services/customer-auth.service';
 import { Slot } from '../../core/models/slot.model';
 import { SERVICES, ServiceType } from '../../core/models/booking.model';
 
@@ -53,6 +54,7 @@ export class ClientBooking {
   private slotService = inject(SlotService);
   private bookingService = inject(BookingService);
   private snackBar = inject(MatSnackBar);
+  readonly customerAuth = inject(CustomerAuthService);
 
   readonly services = SERVICES;
   readonly selectedService = signal<ServiceType | null>(null);
@@ -65,8 +67,8 @@ export class ClientBooking {
   readonly selectedDate = signal<string | null>(null);
   readonly slots = signal<Slot[]>([]);
   readonly selectedSlot = signal<Slot | null>(null);
-  readonly loadingSlots = signal(false);
   readonly submitting = signal(false);
+  readonly loadingSlots = signal(false);
   readonly confirmed = signal<{ date: string; time: string; service: ServiceType } | null>(null);
 
   readonly monthLabel = computed(() =>
@@ -100,17 +102,23 @@ export class ClientBooking {
     return days;
   });
 
-  readonly form = this.fb.group({
-    clientName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-    clientPhone: ['', [Validators.required, Validators.pattern(/^[0-9+\s()-]{6,20}$/), spanishMobileValidator]]
+  // --- Login / registro ---
+  readonly authView = signal<'login' | 'register'>('login');
+  readonly authLoading = signal(false);
+
+  readonly loginForm = this.fb.group({
+    phone: ['', [Validators.required, spanishMobileValidator]],
+    password: ['', [Validators.required]]
+  });
+
+  readonly registerForm = this.fb.group({
+    name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+    phone: ['', [Validators.required, spanishMobileValidator]],
+    password: ['', [Validators.required, Validators.minLength(6)]]
   });
 
   // --- Cancelar una cita ---
   readonly mode = signal<'book' | 'cancel'>('book');
-  readonly cancelForm = this.fb.group({
-    clientName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-    clientPhone: ['', [Validators.required, Validators.pattern(/^[0-9+\s()-]{6,20}$/)]]
-  });
   readonly searching = signal(false);
   readonly searchResults = signal<CancelableBooking[] | null>(null);
   readonly cancellingId = signal<number | null>(null);
@@ -215,25 +223,15 @@ export class ClientBooking {
   submitBooking(): void {
     const slot = this.selectedSlot();
     const service = this.selectedService();
-    if (!slot || !service || this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+    if (!slot || !service) return;
 
     this.submitting.set(true);
-    const { clientName, clientPhone } = this.form.getRawValue();
 
-    this.bookingService.createBooking({
-      slotId: slot.id,
-      clientName: clientName!.trim(),
-      clientPhone: clientPhone!.trim(),
-      service
-    }).subscribe({
+    this.bookingService.createBooking({ slotId: slot.id, service }).subscribe({
       next: () => {
         this.submitting.set(false);
         this.confirmed.set({ date: slot.date, time: this.formatTime(slot.time), service });
         this.selectedSlot.set(null);
-        this.form.reset();
         this.loadMonthAvailability();
         if (this.selectedDate()) this.loadSlots(this.selectedDate()!);
       },
@@ -255,29 +253,70 @@ export class ClientBooking {
     this.selectedSlot.set(null);
   }
 
+  // --- Login / registro ---
+  goToLogin(): void {
+    this.authView.set('login');
+  }
+
+  goToRegister(): void {
+    this.authView.set('register');
+  }
+
+  submitLogin(): void {
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
+    this.authLoading.set(true);
+    const { phone, password } = this.loginForm.getRawValue();
+    this.customerAuth.login(phone!.trim(), password!).subscribe({
+      next: () => {
+        this.authLoading.set(false);
+        this.loginForm.reset();
+      },
+      error: (err) => {
+        this.authLoading.set(false);
+        const message = err?.error?.message || 'No se pudo iniciar sesión.';
+        this.snackBar.open(message, 'Cerrar', { duration: 5000 });
+      }
+    });
+  }
+
+  submitRegister(): void {
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      return;
+    }
+    this.authLoading.set(true);
+    const { name, phone, password } = this.registerForm.getRawValue();
+    this.customerAuth.register(name!.trim(), phone!.trim(), password!).subscribe({
+      next: () => {
+        this.authLoading.set(false);
+        this.registerForm.reset();
+      },
+      error: (err) => {
+        this.authLoading.set(false);
+        const message = err?.error?.message || 'No se pudo completar el registro.';
+        this.snackBar.open(message, 'Cerrar', { duration: 5000 });
+      }
+    });
+  }
+
+  logout(): void {
+    this.customerAuth.logout();
+    this.mode.set('book');
+    this.newBooking();
+    this.searchResults.set(null);
+  }
+
   // --- Cancelar una cita ---
   goToCancel(): void {
     this.mode.set('cancel');
     this.searchResults.set(null);
     this.cancelledOne.set(false);
-    this.cancelForm.reset();
-  }
-
-  backToBooking(): void {
-    this.mode.set('book');
-  }
-
-  searchMyBookings(): void {
-    if (this.cancelForm.invalid) {
-      this.cancelForm.markAllAsTouched();
-      return;
-    }
-
     this.searching.set(true);
-    this.cancelledOne.set(false);
-    const { clientName, clientPhone } = this.cancelForm.getRawValue();
 
-    this.bookingService.findMyBookings(clientName!.trim(), clientPhone!.trim()).subscribe({
+    this.bookingService.findMyBookings().subscribe({
       next: (results) => {
         this.searchResults.set(results);
         this.searching.set(false);
@@ -289,15 +328,18 @@ export class ClientBooking {
     });
   }
 
+  backToBooking(): void {
+    this.mode.set('book');
+  }
+
   cancelMyBooking(booking: CancelableBooking): void {
     if (!confirm(`¿Seguro que quieres cancelar tu cita del ${booking.date} a las ${this.formatTime(booking.time)}?`)) {
       return;
     }
 
     this.cancellingId.set(booking.id);
-    const { clientName, clientPhone } = this.cancelForm.getRawValue();
 
-    this.bookingService.cancelMyBooking(booking.id, clientName!.trim(), clientPhone!.trim()).subscribe({
+    this.bookingService.cancelMyBooking(booking.id).subscribe({
       next: () => {
         this.cancellingId.set(null);
         this.cancelledOne.set(true);

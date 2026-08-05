@@ -376,3 +376,30 @@
     font-size: 0.8rem;
   }
 }
+
+/* Login / registro */
+.auth-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.logout-link {
+  align-self: flex-end;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+  margin-bottom: -4px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 4px;
+  }
+}
+
+.confirm-summary {
+  margin: 0 0 16px;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.95rem;
+}

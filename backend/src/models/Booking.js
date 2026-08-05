@@ -13,6 +13,11 @@ const Booking = sequelize.define('Booking', {
     unique: true,
     field: 'slot_id'
   },
+  customerId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'customer_id'
+  },
   clientName: {
     type: DataTypes.STRING(100),
     allowNull: false,
