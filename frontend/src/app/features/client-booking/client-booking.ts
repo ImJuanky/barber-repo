@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,6 +13,14 @@ import { SlotService } from '../../core/services/slot.service';
 import { BookingService, CancelableBooking } from '../../core/services/booking.service';
 import { Slot } from '../../core/models/slot.model';
 import { SERVICES, ServiceType } from '../../core/models/booking.model';
+
+// Móvil español: 9 dígitos empezando por 6 o 7, admite +34/0034/34 y separadores.
+function spanishMobileValidator(control: AbstractControl): ValidationErrors | null {
+  const raw = String(control.value || '');
+  const digits = raw.replace(/\D/g, '');
+  const withoutPrefix = digits.replace(/^(0034|34)/, '');
+  return /^[67]\d{8}$/.test(withoutPrefix) ? null : { spanishMobile: true };
+}
 
 interface CalendarDay {
   date: string;
@@ -94,7 +102,7 @@ export class ClientBooking {
 
   readonly form = this.fb.group({
     clientName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-    clientPhone: ['', [Validators.required, Validators.pattern(/^[0-9+\s()-]{6,20}$/)]]
+    clientPhone: ['', [Validators.required, Validators.pattern(/^[0-9+\s()-]{6,20}$/), spanishMobileValidator]]
   });
 
   // --- Cancelar una cita ---

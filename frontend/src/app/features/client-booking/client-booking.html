@@ -183,9 +183,9 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Teléfono</mat-label>
-              <input matInput formControlName="clientPhone" maxlength="20" />
+              <input matInput formControlName="clientPhone" maxlength="20" placeholder="612345678" />
               @if (form.get('clientPhone')?.invalid && form.get('clientPhone')?.touched) {
-                <mat-error>Introduce un teléfono válido.</mat-error>
+                <mat-error>Introduce un número de móvil español válido (ej. 612345678).</mat-error>
               }
             </mat-form-field>
 
