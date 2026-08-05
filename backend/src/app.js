@@ -14,6 +14,11 @@ const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
+// Render (y otros PaaS) ponen la app detrás de un proxy inverso; sin esto
+// express-rate-limit no puede identificar la IP real del cliente a partir
+// de X-Forwarded-For y lanza avisos en los logs.
+app.set('trust proxy', 1);
+
 // Seguridad básica
 // crossOriginResourcePolicy en "cross-origin" porque el frontend (Vercel) y el
 // backend (Render) viven en dominios distintos; con el valor por defecto
