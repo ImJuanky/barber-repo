@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -37,6 +38,7 @@ interface CalendarDay {
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
@@ -74,6 +76,8 @@ export class ClientBooking {
   readonly monthLabel = computed(() =>
     this.viewMonth().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
   );
+
+  readonly hasRecommendedSlot = computed(() => this.slots().some((s) => s.recommended));
 
   readonly calendarDays = computed<CalendarDay[]>(() => {
     const view = this.viewMonth();

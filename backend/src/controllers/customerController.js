@@ -2,6 +2,16 @@ const bcrypt = require('bcryptjs');
 const { Customer } = require('../models');
 const { signCustomerToken } = require('../utils/jwt');
 const { normalizeSpanishPhone } = require('../utils/phone');
+const { isAdminPhone } = require('../config/roles');
+
+function toPublicCustomer(customer) {
+  return {
+    id: customer.id,
+    name: customer.name,
+    phone: customer.phone,
+    isAdmin: isAdminPhone(customer.phone)
+  };
+}
 
 // POST /api/customers/register  { name, phone, password }  (público)
 async function register(req, res, next) {
@@ -20,7 +30,7 @@ async function register(req, res, next) {
     const token = signCustomerToken(customer);
     res.status(201).json({
       token,
-      customer: { id: customer.id, name: customer.name, phone: customer.phone }
+      customer: toPublicCustomer(customer)
     });
   } catch (err) {
     next(err);
@@ -46,7 +56,7 @@ async function login(req, res, next) {
     const token = signCustomerToken(customer);
     res.json({
       token,
-      customer: { id: customer.id, name: customer.name, phone: customer.phone }
+      customer: toPublicCustomer(customer)
     });
   } catch (err) {
     next(err);
@@ -60,7 +70,7 @@ async function me(req, res, next) {
       attributes: ['id', 'name', 'phone']
     });
     if (!customer) return res.status(404).json({ message: 'Cliente no encontrado.' });
-    res.json({ customer });
+    res.json({ customer: toPublicCustomer(customer) });
   } catch (err) {
     next(err);
   }

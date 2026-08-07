@@ -10,4 +10,10 @@ export interface Slot {
     clientPhone: string;
     status: 'confirmed' | 'cancelled';
   } | null;
+  // Calendario inteligente: puntuación de conveniencia de este hueco según
+  // las citas ya existentes ese día (ver GET /api/slots). No afecta a la
+  // disponibilidad: el hueco sigue siendo reservable igual que cualquier otro.
+  priorityScore?: number;
+  recommended?: boolean;
+  recommendationReason?: string | null;
 }

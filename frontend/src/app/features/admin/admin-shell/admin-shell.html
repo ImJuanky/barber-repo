@@ -2,7 +2,7 @@
   <mat-icon>content_cut</mat-icon>
   <span class="toolbar-title">Peluquería &middot; Panel</span>
   <span class="spacer"></span>
-  <span class="admin-name">{{ auth.currentAdmin()?.name }}</span>
+  <span class="admin-name">{{ displayName() }}</span>
   <button mat-icon-button (click)="logout()" aria-label="Cerrar sesión">
     <mat-icon>logout</mat-icon>
   </button>

@@ -221,6 +221,22 @@
 }
 
 /* Horas */
+.recommend-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -4px 0 12px;
+  color: var(--mat-sys-primary);
+  font-size: 0.82rem;
+  font-weight: 500;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
 .slots-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
@@ -228,6 +244,12 @@
 }
 
 .slot-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   padding: 10px 8px;
   border-radius: 10px;
   border: 1px solid var(--mat-sys-outline-variant);
@@ -246,6 +268,68 @@
     background: var(--mat-sys-primary);
     color: var(--mat-sys-on-primary);
     border-color: var(--mat-sys-primary);
+
+    .recommend-label {
+      color: var(--mat-sys-on-primary);
+      opacity: 0.85;
+    }
+  }
+
+  // Hora recomendada: mismo control, mismo tamaño, mismo comportamiento —
+  // solo cambia el énfasis visual. Sigue siendo una hora normal y corriente
+  // que se puede elegir o ignorar libremente.
+  &.recommended {
+    border: 1.5px solid var(--mat-sys-primary);
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+    padding-top: 7px;
+    animation: recommend-pop 0.35s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    &.selected {
+      background: var(--mat-sys-primary);
+      color: var(--mat-sys-on-primary);
+    }
+  }
+}
+
+.recommend-icon {
+  position: absolute;
+  top: -7px;
+  right: -6px;
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--mat-sys-primary);
+  background: var(--mat-sys-surface);
+  border-radius: 50%;
+}
+
+.slot-time {
+  line-height: 1.1;
+}
+
+.recommend-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--mat-sys-primary);
+  line-height: 1.1;
+}
+
+@keyframes recommend-pop {
+  from {
+    transform: scale(0.94);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
@@ -384,11 +468,30 @@
   gap: 4px;
 }
 
+.account-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-bottom: -4px;
+}
+
 .logout-link {
-  align-self: flex-end;
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.85rem;
-  margin-bottom: -4px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 4px;
+  }
+}
+
+.admin-link {
+  color: var(--mat-sys-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
 
   mat-icon {
     font-size: 18px;

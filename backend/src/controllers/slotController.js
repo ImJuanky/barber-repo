@@ -1,7 +1,12 @@
 const { Op } = require('sequelize');
 const { Slot, Booking } = require('../models');
+const { getMadridNowParts, isPastSlot } = require('../utils/time');
+const { annotateWithRecommendations } = require('../utils/recommendation');
 
 // GET /api/slots?date=YYYY-MM-DD  (público: solo huecos disponibles, sin datos de reservas)
+// Cada hueco incluye además priorityScore/recommended/recommendationReason:
+// un "calendario inteligente" que destaca (sin eliminar) las horas que mejor
+// aprovechan la agenda del día (pegadas a otras citas o rellenando huecos).
 async function getAvailableSlots(req, res, next) {
   try {
     const { date, from, to } = req.query;
@@ -21,7 +26,48 @@ async function getAvailableSlots(req, res, next) {
       attributes: ['id', 'date', 'time', 'durationMinutes']
     });
 
-    res.json(slots);
+    // Nunca mostrar (ni permitir reservar) huecos cuya hora ya haya pasado
+    // en el día de hoy. Esto es una validación real de datos, no solo de UI:
+    // el mismo filtro protege también /api/bookings vía isPastSlot.
+    const nowParts = getMadridNowParts();
+    const futureSlots = slots.filter((slot) => !isPastSlot(slot.date, slot.time, nowParts));
+
+    // Se calculan las recomendaciones día a día, usando todas las citas
+    // confirmadas de cada fecha implicada (no solo las de los huecos libres).
+    const datesInvolved = [...new Set(futureSlots.map((s) => s.date))];
+    const confirmedBookings = datesInvolved.length
+      ? await Booking.findAll({
+          where: { status: 'confirmed' },
+          include: [{
+            model: Slot,
+            as: 'slot',
+            where: { date: { [Op.in]: datesInvolved } },
+            attributes: ['id', 'date', 'time', 'durationMinutes']
+          }]
+        })
+      : [];
+
+    const bookingsByDate = {};
+    for (const booking of confirmedBookings) {
+      const d = booking.slot.date;
+      if (!bookingsByDate[d]) bookingsByDate[d] = [];
+      bookingsByDate[d].push(booking);
+    }
+
+    const slotsByDate = {};
+    for (const slot of futureSlots) {
+      if (!slotsByDate[slot.date]) slotsByDate[slot.date] = [];
+      slotsByDate[slot.date].push(slot.get({ plain: true }));
+    }
+
+    const result = [];
+    for (const d of Object.keys(slotsByDate)) {
+      const annotated = annotateWithRecommendations(slotsByDate[d], bookingsByDate[d] || []);
+      result.push(...annotated);
+    }
+    result.sort((a, b) => (a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)));
+
+    res.json(result);
   } catch (err) {
     next(err);
   }
@@ -45,11 +91,16 @@ async function getAvailabilityByMonth(req, res, next) {
         status: 'available',
         date: { [Op.between]: [from, to] }
       },
-      attributes: ['date']
+      attributes: ['date', 'time']
     });
 
+    // Un hueco de hoy cuya hora ya pasó no cuenta como disponibilidad real
+    // (evita que el calendario marque hoy como "con huecos" cuando ya no
+    // queda ninguna hora reservable).
+    const nowParts = getMadridNowParts();
     const counts = {};
     for (const slot of slots) {
+      if (isPastSlot(slot.date, slot.time, nowParts)) continue;
       counts[slot.date] = (counts[slot.date] || 0) + 1;
     }
 

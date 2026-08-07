@@ -78,9 +78,16 @@
         }
       </mat-card>
     } @else {
-      <button mat-button class="logout-link" (click)="logout()">
-        <mat-icon>logout</mat-icon> Cerrar sesión
-      </button>
+      <div class="account-actions">
+        @if (customerAuth.currentCustomer()?.isAdmin) {
+          <a mat-button class="admin-link" routerLink="/admin/reservas">
+            <mat-icon>admin_panel_settings</mat-icon> Panel de administración
+          </a>
+        }
+        <button mat-button class="logout-link" (click)="logout()">
+          <mat-icon>logout</mat-icon> Cerrar sesión
+        </button>
+      </div>
 
       @if (mode() === 'cancel') {
         <mat-card class="step-card cancel-card">
@@ -205,15 +212,28 @@
             } @else if (slots().length === 0) {
               <p class="empty-state">Ya no quedan huecos libres este día.</p>
             } @else {
+              @if (hasRecommendedSlot()) {
+                <p class="recommend-hint">
+                  <mat-icon>auto_awesome</mat-icon>
+                  Las horas destacadas aprovechan mejor la agenda del día.
+                </p>
+              }
               <div class="slots-grid">
                 @for (slot of slots(); track slot.id) {
                   <button
                     type="button"
                     class="slot-btn"
                     [class.selected]="selectedSlot()?.id === slot.id"
+                    [class.recommended]="slot.recommended"
                     (click)="selectSlot(slot)"
                   >
-                    {{ formatTime(slot.time) }}
+                    @if (slot.recommended) {
+                      <mat-icon class="recommend-icon">auto_awesome</mat-icon>
+                    }
+                    <span class="slot-time">{{ formatTime(slot.time) }}</span>
+                    @if (slot.recommended) {
+                      <span class="recommend-label">{{ slot.recommendationReason || 'Recomendada' }}</span>
+                    }
                   </button>
                 }
               </div>
