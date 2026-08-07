@@ -1,23 +1,16 @@
 .slots-page {
   max-width: 900px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-
-  h1 {
-    font-size: 1.5rem;
-    margin: 0;
-  }
+  gap: var(--space-4);
 }
 
-mat-card {
-  padding: 20px;
-  border-radius: 14px;
+.surface-card {
+  padding: var(--space-5);
 
   h2 {
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 700;
     margin: 0 0 4px;
   }
 }
@@ -25,33 +18,27 @@ mat-card {
 .grid-hint {
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.85rem;
-  margin: 0 0 16px;
+  margin: 0 0 var(--space-4);
 }
 
 .week-header {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--space-3);
   margin-bottom: 4px;
 
   .week-label {
-    font-weight: 600;
+    font-weight: 700;
     text-transform: capitalize;
     min-width: 140px;
     text-align: center;
   }
 }
 
-.loading-row {
-  display: flex;
-  justify-content: center;
-  padding: 24px 0;
-}
-
 .week-grid {
   display: grid;
-  grid-template-columns: 64px repeat(5, 1fr);
+  grid-template-columns: 60px repeat(5, 1fr);
   gap: 6px;
   align-items: center;
 }
@@ -67,39 +54,49 @@ mat-card {
   padding-bottom: 4px;
 
   .day-name {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
     color: var(--mat-sys-on-surface-variant);
   }
 
   .day-number {
     font-size: 0.9rem;
-    font-weight: 600;
+    font-weight: 700;
+    font-family: var(--app-font-display);
   }
 }
 
 .time-label {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--mat-sys-on-surface-variant);
   text-align: right;
   padding-right: 4px;
+  font-variant-numeric: tabular-nums;
 }
 
 .grid-cell {
-  height: 40px;
-  border-radius: 8px;
+  height: 42px;
+  min-height: 42px;
+  border-radius: var(--radius-sm);
   border: 1.5px solid var(--mat-sys-outline-variant);
-  background: var(--mat-sys-surface);
+  background: var(--mat-sys-surface-container-lowest);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.12s ease;
+  transition: transform var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard);
 
   mat-icon {
     font-size: 18px;
     height: 18px;
     width: 18px;
+  }
+
+  &:active {
+    transform: scale(0.94);
   }
 
   &.status-empty:hover {
@@ -110,24 +107,26 @@ mat-card {
   &.status-selected {
     background: var(--mat-sys-primary);
     border-color: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
+    animation: scale-in var(--dur-fast) var(--ease-decel) both;
   }
 
   &.status-available {
-    background: #2e7d32;
-    border-color: #2e7d32;
+    background: var(--app-success);
+    border-color: var(--app-success);
     color: #fff;
     cursor: pointer;
   }
 
   &.status-blocked {
-    background: #9e9e9e;
-    border-color: #9e9e9e;
+    background: var(--mat-sys-outline);
+    border-color: var(--mat-sys-outline);
     color: #fff;
   }
 
   &.status-booked {
-    background: var(--mat-sys-tertiary, #1565c0);
-    border-color: var(--mat-sys-tertiary, #1565c0);
+    background: var(--mat-sys-tertiary);
+    border-color: var(--mat-sys-tertiary);
     color: #fff;
     cursor: default;
   }
@@ -136,9 +135,10 @@ mat-card {
 .grid-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 16px;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
   font-size: 0.78rem;
+  color: var(--mat-sys-on-surface-variant);
 
   .legend-item {
     display: flex;
@@ -154,23 +154,23 @@ mat-card {
     border: 1.5px solid var(--mat-sys-outline-variant);
   }
 
-  .dot-empty { background: var(--mat-sys-surface); }
+  .dot-empty { background: var(--mat-sys-surface-container-lowest); }
   .dot-selected { background: var(--mat-sys-primary); border-color: var(--mat-sys-primary); }
-  .dot-available { background: #2e7d32; border-color: #2e7d32; }
-  .dot-blocked { background: #9e9e9e; border-color: #9e9e9e; }
-  .dot-booked { background: var(--mat-sys-tertiary, #1565c0); border-color: var(--mat-sys-tertiary, #1565c0); }
+  .dot-available { background: var(--app-success); border-color: var(--app-success); }
+  .dot-blocked { background: var(--mat-sys-outline); border-color: var(--mat-sys-outline); }
+  .dot-booked { background: var(--mat-sys-tertiary); border-color: var(--mat-sys-tertiary); }
 }
 
 .grid-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
 }
 
 .custom-row {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: flex-start;
   flex-wrap: wrap;
 
@@ -187,30 +187,14 @@ mat-card {
   width: 140px;
 }
 
-.slots-table {
-  width: 100%;
-  border-collapse: collapse;
+.inline-edit {
+  width: 80px;
+  border: 1.5px solid var(--mat-sys-primary);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  font: inherit;
   font-size: 0.88rem;
-
-  th {
-    text-align: left;
-    padding: 8px;
-    color: var(--mat-sys-on-surface-variant);
-    font-weight: 500;
-    border-bottom: 1px solid var(--mat-sys-outline-variant);
-  }
-
-  td {
-    padding: 8px;
-    border-bottom: 1px solid var(--mat-sys-surface-container-highest);
-  }
-}
-
-.status-chip {
-  font-size: 0.78rem;
-  padding: 2px 8px;
-  border-radius: 12px;
-  background: var(--mat-sys-secondary-container);
+  background: var(--mat-sys-surface-container-lowest);
 }
 
 .actions-cell {
@@ -218,20 +202,14 @@ mat-card {
   text-align: right;
 }
 
-.inline-edit {
-  width: 70px;
-  border: 1px solid var(--mat-sys-outline);
-  border-radius: 6px;
-  padding: 4px 6px;
-  font-size: 0.9rem;
-}
-
 @media (max-width: 640px) {
   .week-grid {
-    grid-template-columns: 48px repeat(5, 1fr);
+    grid-template-columns: 42px repeat(5, 1fr);
+    gap: 4px;
     font-size: 0.85rem;
   }
   .grid-cell {
-    height: 34px;
+    height: 38px;
+    min-height: 38px;
   }
 }

@@ -1,28 +1,43 @@
-<div class="bookings-page">
-  <div class="bookings-header">
-    <h1>Reservas</h1>
+<div class="page bookings-page">
+  <div class="page-header">
+    <div>
+      <h1>Reservas</h1>
+      <p>Consulta, edita o cancela las citas confirmadas.</p>
+    </div>
     <div class="filter-row">
       <mat-form-field appearance="outline" class="filter-field">
         <mat-label>Filtrar por día</mat-label>
+        <mat-icon matIconPrefix>event</mat-icon>
         <input matInput [matDatepicker]="picker" [value]="filterDate()" (dateChange)="onFilterDateChange($event.value)" readonly />
         <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
       @if (filterDate()) {
-        <button mat-icon-button (click)="clearFilter()" matTooltip="Quitar filtro">
+        <button mat-icon-button (click)="clearFilter()" matTooltip="Quitar filtro" aria-label="Quitar filtro">
           <mat-icon>close</mat-icon>
         </button>
       }
     </div>
   </div>
 
-  <mat-card class="bookings-card">
+  <div class="surface-card bookings-card">
     @if (loading()) {
-      <div class="loading-row"><mat-spinner diameter="32"></mat-spinner></div>
+      <table class="data-table" aria-hidden="true">
+        <tbody>
+          @for (row of skeletonRows; track $index) {
+            <tr>
+              <td colspan="8"><div class="skeleton" style="height: 20px; width: 100%;"></div></td>
+            </tr>
+          }
+        </tbody>
+      </table>
     } @else if (bookings().length === 0) {
-      <p class="empty-state">No hay reservas para mostrar.</p>
+      <div class="empty-state">
+        <mat-icon>event_busy</mat-icon>
+        <span>No hay reservas para mostrar.</span>
+      </div>
     } @else {
-      <table class="bookings-table">
+      <table class="data-table bookings-table">
         <thead>
           <tr>
             <th>Fecha</th>
@@ -38,23 +53,23 @@
         <tbody>
           @for (booking of bookings(); track booking.id) {
             <tr>
-              <td>{{ booking.slot?.date }}</td>
-              <td>{{ formatTime(booking.slot?.time) }}</td>
-              <td>
+              <td data-label="Fecha">{{ booking.slot?.date }}</td>
+              <td data-label="Hora">{{ formatTime(booking.slot?.time) }}</td>
+              <td data-label="Cliente">
                 @if (editingBookingId === booking.id) {
                   <input class="inline-edit" [(ngModel)]="editName" />
                 } @else {
                   {{ booking.clientName }}
                 }
               </td>
-              <td>
+              <td data-label="Teléfono">
                 @if (editingBookingId === booking.id) {
                   <input class="inline-edit" [(ngModel)]="editPhone" />
                 } @else {
                   {{ booking.clientPhone }}
                 }
               </td>
-              <td>
+              <td data-label="Servicio">
                 @if (editingBookingId === booking.id) {
                   <mat-select class="inline-edit" [(ngModel)]="editService">
                     @for (s of services; track s.value) {
@@ -65,21 +80,25 @@
                   {{ serviceLabel(booking.service) }}
                 }
               </td>
-              <td>{{ booking.price }} €</td>
-              <td><span class="status-chip">{{ booking.status === 'confirmed' ? 'Confirmada' : 'Cancelada' }}</span></td>
+              <td data-label="Precio">{{ booking.price }} €</td>
+              <td data-label="Estado">
+                <span class="status-chip" [class.chip-success]="booking.status === 'confirmed'" [class.chip-neutral]="booking.status !== 'confirmed'">
+                  {{ booking.status === 'confirmed' ? 'Confirmada' : 'Cancelada' }}
+                </span>
+              </td>
               <td class="actions-cell">
                 @if (editingBookingId === booking.id) {
-                  <button mat-icon-button (click)="saveEdit(booking)" matTooltip="Guardar">
+                  <button mat-icon-button (click)="saveEdit(booking)" matTooltip="Guardar" aria-label="Guardar cambios">
                     <mat-icon>check</mat-icon>
                   </button>
-                  <button mat-icon-button (click)="cancelEditForm()" matTooltip="Cancelar edición">
+                  <button mat-icon-button (click)="cancelEditForm()" matTooltip="Cancelar edición" aria-label="Cancelar edición">
                     <mat-icon>close</mat-icon>
                   </button>
                 } @else {
-                  <button mat-icon-button (click)="startEdit(booking)" matTooltip="Editar">
+                  <button mat-icon-button (click)="startEdit(booking)" matTooltip="Editar" [attr.aria-label]="'Editar reserva de ' + booking.clientName">
                     <mat-icon>edit</mat-icon>
                   </button>
-                  <button mat-icon-button color="warn" (click)="cancelBooking(booking)" matTooltip="Cancelar reserva">
+                  <button mat-icon-button color="warn" (click)="cancelBooking(booking)" matTooltip="Cancelar reserva" [attr.aria-label]="'Cancelar reserva de ' + booking.clientName">
                     <mat-icon>event_busy</mat-icon>
                   </button>
                 }
@@ -89,5 +108,5 @@
         </tbody>
       </table>
     }
-  </mat-card>
+  </div>
 </div>

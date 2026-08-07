@@ -1,6 +1,5 @@
 import { Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -19,7 +18,7 @@ interface CalendarDay {
 @Component({
   selector: 'app-admin-calendar',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
   templateUrl: './admin-calendar.html',
   styleUrl: './admin-calendar.scss'
 })

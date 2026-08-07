@@ -1,28 +1,22 @@
 .calendar-page {
   max-width: 900px;
-  margin: 0 auto;
 }
 
-.calendar-header {
+.calendar-nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 
-  h1 {
-    font-size: 1.3rem;
+  .month-label {
+    font-weight: 700;
+    font-family: var(--app-font-display);
     text-transform: capitalize;
-    margin: 0;
     min-width: 200px;
     text-align: center;
+    font-size: 1.05rem;
   }
-}
-
-.loading-row {
-  display: flex;
-  justify-content: center;
-  padding: 24px 0;
 }
 
 .calendar-grid {
@@ -33,8 +27,10 @@
 
 .weekday-cell {
   text-align: center;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--mat-sys-on-surface-variant);
   padding: 4px 0;
 }
@@ -42,8 +38,8 @@
 .day-cell {
   aspect-ratio: 1;
   border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 10px;
-  background: var(--mat-sys-surface);
+  border-radius: var(--radius-md);
+  background: var(--mat-sys-surface-container-lowest);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -51,6 +47,17 @@
   gap: 4px;
   cursor: pointer;
   min-height: 56px;
+  transition: transform var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard);
+
+  &:hover {
+    border-color: var(--mat-sys-primary);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.97);
+  }
 
   &.other-month {
     opacity: 0.35;
@@ -62,13 +69,15 @@
   }
 
   &.selected {
-    background: var(--mat-sys-secondary-container);
+    background: var(--mat-sys-primary-container);
+    border-color: var(--mat-sys-primary);
   }
 }
 
 .day-number {
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
+  font-family: var(--app-font-display);
 }
 
 .day-badges {
@@ -81,23 +90,25 @@
   min-width: 16px;
   height: 16px;
   line-height: 16px;
-  border-radius: 8px;
-  font-size: 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: 0.64rem;
+  font-weight: 700;
   text-align: center;
   color: #fff;
   padding: 0 4px;
 }
 
-.badge-available { background: #2e7d32; }
-.badge-booked { background: #1565c0; }
-.badge-blocked { background: #9e9e9e; }
+.badge-available { background: var(--app-success); }
+.badge-booked { background: var(--mat-sys-tertiary); }
+.badge-blocked { background: var(--mat-sys-outline); }
 
 .legend {
   display: flex;
-  gap: 16px;
+  gap: var(--space-4);
   justify-content: center;
-  margin: 16px 0;
+  margin: var(--space-4) 0;
   font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
 
   .legend-item {
     display: flex;
@@ -107,18 +118,13 @@
 }
 
 .day-detail {
-  margin-top: 8px;
-  padding: 16px 20px;
-  border-radius: 14px;
+  margin-top: var(--space-2);
+  padding: var(--space-5);
 
   h2 {
-    margin: 0 0 12px;
+    margin: 0 0 var(--space-3);
     font-size: 1.05rem;
   }
-}
-
-.empty-state {
-  color: var(--mat-sys-on-surface-variant);
 }
 
 .day-slot-list {
@@ -127,43 +133,36 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 
   li {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    background: var(--mat-sys-surface-container-lowest);
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--mat-sys-surface-container-low);
     font-size: 0.88rem;
   }
 
   .slot-time {
-    font-weight: 600;
+    font-weight: 700;
     min-width: 50px;
+    font-variant-numeric: tabular-nums;
   }
 
-  .slot-status {
-    text-transform: capitalize;
+  .slot-client {
     color: var(--mat-sys-on-surface-variant);
-    min-width: 80px;
-  }
-
-  li.status-booked {
-    background: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
-  }
-
-  li.status-blocked {
-    background: color-mix(in srgb, #9e9e9e 12%, transparent);
+    font-size: 0.85rem;
   }
 }
 
 @media (max-width: 600px) {
   .day-cell {
     min-height: 44px;
+    border-radius: var(--radius-sm);
   }
   .day-number {
-    font-size: 0.75rem;
+    font-size: 0.78rem;
   }
 }

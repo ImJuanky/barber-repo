@@ -1,7 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,13 +8,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { MatSelectModule } from '@angular/material/select';
 
 import { BookingService } from '../../../core/services/booking.service';
 import { Booking, ServiceType, SERVICES } from '../../../core/models/booking.model';
+import { confirmDialog } from '../../../shared/confirm-dialog/confirm-dialog';
 
 @Component({
   selector: 'app-admin-bookings',
@@ -23,7 +23,6 @@ import { Booking, ServiceType, SERVICES } from '../../../core/models/booking.mod
   imports: [
     CommonModule,
     FormsModule,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
@@ -31,9 +30,9 @@ import { Booking, ServiceType, SERVICES } from '../../../core/models/booking.mod
     MatDatepickerModule,
     MatNativeDateModule,
     MatSnackBarModule,
-    MatProgressSpinnerModule,
     MatTooltipModule,
-    MatSelectModule
+    MatSelectModule,
+    MatDialogModule
   ],
   templateUrl: './admin-bookings.html',
   styleUrl: './admin-bookings.scss'
@@ -43,13 +42,14 @@ export class AdminBookings {
   readonly loading = signal(false);
   readonly filterDate = signal<Date | null>(null);
   readonly services = SERVICES;
+  readonly skeletonRows = Array.from({ length: 5 });
 
   editingBookingId: number | null = null;
   editName = '';
   editPhone = '';
   editService: ServiceType = 'corte';
 
-  constructor(private bookingService: BookingService, private snackBar: MatSnackBar) {
+  constructor(private bookingService: BookingService, private snackBar: MatSnackBar, private dialog: MatDialog) {
     this.loadBookings();
   }
 
@@ -114,13 +114,22 @@ export class AdminBookings {
   }
 
   cancelBooking(booking: Booking): void {
-    if (!confirm(`¿Cancelar la reserva de ${booking.clientName}?`)) return;
-    this.bookingService.cancelBooking(booking.id).subscribe({
-      next: () => {
-        this.loadBookings();
-        this.notify('Reserva cancelada y hueco liberado.');
-      },
-      error: (err) => this.notify(err?.error?.message || 'No se pudo cancelar la reserva.')
+    confirmDialog(this.dialog, {
+      title: 'Cancelar reserva',
+      message: `¿Seguro que quieres cancelar la reserva de ${booking.clientName}? El hueco quedará libre de nuevo.`,
+      confirmLabel: 'Cancelar reserva',
+      cancelLabel: 'Volver',
+      danger: true,
+      icon: 'event_busy'
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+      this.bookingService.cancelBooking(booking.id).subscribe({
+        next: () => {
+          this.loadBookings();
+          this.notify('Reserva cancelada y hueco liberado.');
+        },
+        error: (err) => this.notify(err?.error?.message || 'No se pudo cancelar la reserva.')
+      });
     });
   }
 

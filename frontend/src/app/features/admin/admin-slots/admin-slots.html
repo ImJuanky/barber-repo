@@ -1,7 +1,12 @@
-<div class="slots-page">
-  <h1>Gestión de huecos</h1>
+<div class="page slots-page">
+  <div class="page-header">
+    <div>
+      <h1>Gestión de huecos</h1>
+      <p>Crea, bloquea o elimina los huecos disponibles para reservar.</p>
+    </div>
+  </div>
 
-  <mat-card class="grid-card">
+  <div class="surface-card grid-card">
     <div class="week-header">
       <button mat-icon-button (click)="prevWeek()" aria-label="Semana anterior">
         <mat-icon>chevron_left</mat-icon>
@@ -12,7 +17,7 @@
       </button>
     </div>
 
-    <p class="grid-hint">Haz clic en un hueco en blanco para seleccionarlo (se pone azul) y luego crea todos los seleccionados de golpe.</p>
+    <p class="grid-hint">Toca un hueco en blanco para seleccionarlo y luego crea todos los seleccionados de golpe.</p>
 
     @if (loadingWeek()) {
       <div class="loading-row"><mat-spinner diameter="32"></mat-spinner></div>
@@ -34,6 +39,7 @@
               class="grid-cell"
               [class]="'status-' + cellStatus(day.date, time)"
               [matTooltip]="cellSlot(day.date, time)?.booking?.clientName || ''"
+              [attr.aria-label]="day.label + ' ' + day.dayNumber + ', ' + time + ': ' + statusLabel(cellStatus(day.date, time))"
               (click)="toggleCell(day.date, time)"
             >
               @if (cellStatus(day.date, time) === 'booked') {
@@ -72,9 +78,9 @@
         </button>
       </div>
     }
-  </mat-card>
+  </div>
 
-  <mat-card class="custom-card">
+  <div class="surface-card custom-card">
     <h2>Añadir hora fuera de este horario</h2>
     <p class="grid-hint">Para otro día (fin de semana) o una hora distinta de 17:00–20:00.</p>
     <div class="custom-row">
@@ -90,12 +96,12 @@
       </mat-form-field>
       <button mat-flat-button color="primary" (click)="addCustomSlot()">Añadir</button>
     </div>
-  </mat-card>
+  </div>
 
   @if (extraSlots().length > 0) {
-    <mat-card class="extra-card">
+    <div class="surface-card extra-card">
       <h2>Otros huecos de esta semana</h2>
-      <table class="slots-table">
+      <table class="data-table">
         <thead>
           <tr>
             <th>Fecha</th>
@@ -107,17 +113,26 @@
         </thead>
         <tbody>
           @for (slot of extraSlots(); track slot.id) {
-            <tr [class]="'status-' + slot.status">
-              <td>{{ slot.date }}</td>
-              <td>
+            <tr>
+              <td data-label="Fecha">{{ slot.date }}</td>
+              <td data-label="Hora">
                 @if (editingSlotId === slot.id) {
                   <input class="inline-edit" [(ngModel)]="editTimeValue" (keyup.enter)="saveEdit(slot)" />
                 } @else {
                   {{ formatTime(slot.time) }}
                 }
               </td>
-              <td><span class="status-chip">{{ statusLabel(slot.status) }}</span></td>
-              <td>
+              <td data-label="Estado">
+                <span
+                  class="status-chip"
+                  [class.chip-success]="slot.status === 'available'"
+                  [class.chip-info]="slot.status === 'booked'"
+                  [class.chip-neutral]="slot.status === 'blocked'"
+                >
+                  {{ statusLabel(slot.status) }}
+                </span>
+              </td>
+              <td data-label="Cliente">
                 @if (slot.booking) {
                   {{ slot.booking.clientName }} &middot; {{ slot.booking.clientPhone }}
                 } @else {
@@ -126,17 +141,17 @@
               </td>
               <td class="actions-cell">
                 @if (editingSlotId === slot.id) {
-                  <button mat-icon-button (click)="saveEdit(slot)"><mat-icon>check</mat-icon></button>
-                  <button mat-icon-button (click)="cancelEdit()"><mat-icon>close</mat-icon></button>
+                  <button mat-icon-button (click)="saveEdit(slot)" aria-label="Guardar hora"><mat-icon>check</mat-icon></button>
+                  <button mat-icon-button (click)="cancelEdit()" aria-label="Cancelar edición"><mat-icon>close</mat-icon></button>
                 } @else if (slot.status !== 'booked') {
-                  <button mat-icon-button (click)="startEdit(slot)" matTooltip="Modificar hora"><mat-icon>edit</mat-icon></button>
-                  <button mat-icon-button color="warn" (click)="deleteSlot(slot)" matTooltip="Eliminar"><mat-icon>delete</mat-icon></button>
+                  <button mat-icon-button (click)="startEdit(slot)" matTooltip="Modificar hora" aria-label="Modificar hora"><mat-icon>edit</mat-icon></button>
+                  <button mat-icon-button color="warn" (click)="deleteSlot(slot)" matTooltip="Eliminar" aria-label="Eliminar hueco"><mat-icon>delete</mat-icon></button>
                 }
               </td>
             </tr>
           }
         </tbody>
       </table>
-    </mat-card>
+    </div>
   }
 </div>

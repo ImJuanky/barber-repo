@@ -1,7 +1,10 @@
-<div class="stats-page">
-  <div class="stats-header">
-    <h1>Estadísticas</h1>
-    <mat-button-toggle-group [value]="range()" (change)="setRange($event.value)">
+<div class="page stats-page">
+  <div class="page-header">
+    <div>
+      <h1>Estadísticas</h1>
+      <p>Evolución de cortes e ingresos.</p>
+    </div>
+    <mat-button-toggle-group [value]="range()" (change)="setRange($event.value)" aria-label="Rango de fechas">
       <mat-button-toggle value="6m">6 meses</mat-button-toggle>
       <mat-button-toggle value="12m">12 meses</mat-button-toggle>
       <mat-button-toggle value="year">Este año</mat-button-toggle>
@@ -9,38 +12,44 @@
   </div>
 
   @if (loading()) {
-    <div class="loading-row"><mat-spinner diameter="36"></mat-spinner></div>
-  }
-
-  @if (stats(); as s) {
-    <div class="summary-grid">
-      <mat-card class="summary-card">
+    <div class="summary-grid" aria-hidden="true">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="surface-card summary-card skeleton" style="height: 84px;"></div>
+      }
+    </div>
+    <div class="surface-card chart-card skeleton" style="height: 340px;"></div>
+  } @else if (stats(); as s) {
+    <div class="summary-grid animate-in">
+      <div class="surface-card summary-card">
         <span class="summary-label">Cortes realizados</span>
         <span class="summary-value">{{ s.totalBookings }}</span>
-      </mat-card>
-      <mat-card class="summary-card highlight">
+      </div>
+      <div class="summary-card highlight">
         <span class="summary-label">Ingresos totales</span>
         <span class="summary-value">{{ s.totalRevenue.toFixed(2) }} €</span>
-      </mat-card>
-      <mat-card class="summary-card">
+      </div>
+      <div class="surface-card summary-card">
         <span class="summary-label">Solo corte</span>
         <span class="summary-value">{{ corteStats().count }}</span>
         <span class="summary-sub">{{ corteStats().revenue.toFixed(2) }} €</span>
-      </mat-card>
-      <mat-card class="summary-card">
+      </div>
+      <div class="surface-card summary-card">
         <span class="summary-label">Corte y barba</span>
         <span class="summary-value">{{ barbaStats().count }}</span>
         <span class="summary-sub">{{ barbaStats().revenue.toFixed(2) }} €</span>
-      </mat-card>
+      </div>
     </div>
 
-    <mat-card class="chart-card">
+    <div class="surface-card chart-card animate-in">
       <div class="chart-wrapper">
         <canvas #chartCanvas></canvas>
       </div>
       @if (s.series.length === 0) {
-        <p class="empty-state">Todavía no hay reservas confirmadas en este periodo.</p>
+        <div class="empty-state">
+          <mat-icon>insights</mat-icon>
+          <span>Todavía no hay reservas confirmadas en este periodo.</span>
+        </div>
       }
-    </mat-card>
+    </div>
   }
 </div>

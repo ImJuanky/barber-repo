@@ -1,7 +1,6 @@
 import { Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,9 +10,11 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { SlotService } from '../../../core/services/slot.service';
 import { Slot } from '../../../core/models/slot.model';
+import { confirmDialog } from '../../../shared/confirm-dialog/confirm-dialog';
 
 interface GridDay {
   date: string;
@@ -29,7 +30,6 @@ type CellStatus = 'empty' | 'selected' | 'available' | 'blocked' | 'booked';
   imports: [
     CommonModule,
     FormsModule,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
@@ -38,7 +38,8 @@ type CellStatus = 'empty' | 'selected' | 'available' | 'blocked' | 'booked';
     MatNativeDateModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatDialogModule
   ],
   templateUrl: './admin-slots.html',
   styleUrl: './admin-slots.scss'
@@ -94,7 +95,7 @@ export class AdminSlots {
       .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   });
 
-  constructor(private slotService: SlotService, private snackBar: MatSnackBar) {
+  constructor(private slotService: SlotService, private snackBar: MatSnackBar, private dialog: MatDialog) {
     this.loadWeek();
   }
 
@@ -248,10 +249,18 @@ export class AdminSlots {
   }
 
   deleteSlot(slot: Slot): void {
-    if (!confirm(`¿Eliminar el hueco de las ${this.normalizeTime(slot.time)}?`)) return;
-    this.slotService.deleteSlot(slot.id).subscribe({
-      next: () => this.loadWeek(),
-      error: (err) => this.notify(err?.error?.message || 'No se pudo eliminar el hueco.')
+    confirmDialog(this.dialog, {
+      title: 'Eliminar hueco',
+      message: `¿Eliminar el hueco del ${slot.date} a las ${this.normalizeTime(slot.time)}? Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      danger: true,
+      icon: 'delete'
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+      this.slotService.deleteSlot(slot.id).subscribe({
+        next: () => this.loadWeek(),
+        error: (err) => this.notify(err?.error?.message || 'No se pudo eliminar el hueco.')
+      });
     });
   }
 
@@ -289,6 +298,8 @@ export class AdminSlots {
       case 'available': return 'Disponible';
       case 'blocked': return 'Bloqueado';
       case 'booked': return 'Reservado';
+      case 'selected': return 'Seleccionado para crear';
+      case 'empty': return 'Libre, toca para seleccionar';
       default: return status || '';
     }
   }

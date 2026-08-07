@@ -10,13 +10,14 @@
     </header>
 
     @if (!customerAuth.currentCustomer()) {
-      <mat-card class="step-card auth-card">
+      <mat-card class="step-card auth-card animate-in">
         @if (authView() === 'login') {
           <h2 class="step-title">Iniciar sesión</h2>
           <form [formGroup]="loginForm" (ngSubmit)="submitLogin()" class="booking-form">
             <mat-form-field appearance="outline">
               <mat-label>Teléfono</mat-label>
-              <input matInput formControlName="phone" maxlength="20" placeholder="612345678" />
+              <mat-icon matIconPrefix>call</mat-icon>
+              <input matInput formControlName="phone" maxlength="20" placeholder="612345678" autocomplete="tel" />
               @if (loginForm.get('phone')?.invalid && loginForm.get('phone')?.touched) {
                 <mat-error>Introduce un número de móvil español válido.</mat-error>
               }
@@ -24,7 +25,8 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Contraseña</mat-label>
-              <input matInput type="password" formControlName="password" />
+              <mat-icon matIconPrefix>lock_outline</mat-icon>
+              <input matInput type="password" formControlName="password" autocomplete="current-password" />
               @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
                 <mat-error>Introduce tu contraseña.</mat-error>
               }
@@ -44,7 +46,8 @@
           <form [formGroup]="registerForm" (ngSubmit)="submitRegister()" class="booking-form">
             <mat-form-field appearance="outline">
               <mat-label>Nombre completo</mat-label>
-              <input matInput formControlName="name" maxlength="100" />
+              <mat-icon matIconPrefix>person_outline</mat-icon>
+              <input matInput formControlName="name" maxlength="100" autocomplete="name" />
               @if (registerForm.get('name')?.invalid && registerForm.get('name')?.touched) {
                 <mat-error>Introduce tu nombre (2-100 caracteres).</mat-error>
               }
@@ -52,7 +55,8 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Teléfono</mat-label>
-              <input matInput formControlName="phone" maxlength="20" placeholder="612345678" />
+              <mat-icon matIconPrefix>call</mat-icon>
+              <input matInput formControlName="phone" maxlength="20" placeholder="612345678" autocomplete="tel" />
               @if (registerForm.get('phone')?.invalid && registerForm.get('phone')?.touched) {
                 <mat-error>Introduce un número de móvil español válido (ej. 612345678).</mat-error>
               }
@@ -60,7 +64,8 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Contraseña</mat-label>
-              <input matInput type="password" formControlName="password" />
+              <mat-icon matIconPrefix>lock_outline</mat-icon>
+              <input matInput type="password" formControlName="password" autocomplete="new-password" />
               @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
                 <mat-error>La contraseña debe tener al menos 6 caracteres.</mat-error>
               }
@@ -90,7 +95,7 @@
       </div>
 
       @if (mode() === 'cancel') {
-        <mat-card class="step-card cancel-card">
+        <mat-card class="step-card cancel-card animate-in">
           <button mat-button class="back-link" (click)="backToBooking()">
             <mat-icon>arrow_back</mat-icon> Volver a reservar
           </button>
@@ -104,7 +109,10 @@
             </p>
           } @else if (searchResults() !== null) {
             @if (searchResults()!.length === 0) {
-              <p class="empty-state">No tienes citas futuras.</p>
+              <p class="empty-state">
+                <mat-icon>event_available</mat-icon>
+                No tienes citas futuras.
+              </p>
             } @else {
               <div class="my-bookings-list">
                 @for (booking of searchResults(); track booking.id) {
@@ -133,7 +141,7 @@
           }
         </mat-card>
       } @else if (confirmed()) {
-        <mat-card class="confirmation-card">
+        <mat-card class="confirmation-card animate-in">
           <mat-icon class="confirmation-icon">check_circle</mat-icon>
           <h2>¡Reserva confirmada!</h2>
           <p>
@@ -143,7 +151,7 @@
           <button mat-flat-button color="primary" (click)="newBooking()">Hacer otra reserva</button>
         </mat-card>
       } @else if (!selectedService()) {
-        <mat-card class="step-card">
+        <mat-card class="step-card animate-in">
           <h2 class="step-title"><span class="step-number">1</span> Elige un servicio</h2>
           <div class="services-grid">
             @for (service of services; track service.value) {
@@ -165,7 +173,7 @@
           <button mat-button (click)="changeService()">Cambiar</button>
         </div>
 
-        <mat-card class="step-card calendar-card">
+        <mat-card class="step-card calendar-card animate-in">
           <h2 class="step-title"><span class="step-number">2</span> Elige un día</h2>
 
           <div class="calendar-header">
@@ -194,6 +202,7 @@
                   [class.has-availability]="day.hasAvailability"
                   [class.selected]="selectedDate() === day.date"
                   [disabled]="day.isPast || !day.hasAvailability"
+                  [attr.aria-label]="day.date + (day.hasAvailability ? ', huecos disponibles' : ', sin huecos disponibles')"
                   (click)="selectDay(day)"
                 >
                   {{ day.dayNumber }}
@@ -204,13 +213,20 @@
         </mat-card>
 
         @if (selectedDate()) {
-          <mat-card class="step-card">
+          <mat-card class="step-card animate-in">
             <h2 class="step-title"><span class="step-number">3</span> Elige una hora</h2>
 
             @if (loadingSlots()) {
-              <div class="loading-row"><mat-spinner diameter="28"></mat-spinner></div>
+              <div class="slots-grid" aria-hidden="true">
+                @for (i of skeletonSlots; track $index) {
+                  <div class="skeleton" style="height: 46px; border-radius: var(--radius-sm);"></div>
+                }
+              </div>
             } @else if (slots().length === 0) {
-              <p class="empty-state">Ya no quedan huecos libres este día.</p>
+              <p class="empty-state">
+                <mat-icon>event_busy</mat-icon>
+                Ya no quedan huecos libres este día.
+              </p>
             } @else {
               @if (hasRecommendedSlot()) {
                 <p class="recommend-hint">
@@ -242,7 +258,7 @@
         }
 
         @if (selectedSlot()) {
-          <mat-card class="step-card">
+          <mat-card class="step-card animate-in">
             <h2 class="step-title"><span class="step-number">4</span> Confirmar</h2>
             <p class="confirm-summary">
               <strong>{{ serviceLabel(selectedService()!) }}</strong> el

@@ -9,12 +9,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { SlotService } from '../../core/services/slot.service';
 import { BookingService, CancelableBooking } from '../../core/services/booking.service';
 import { CustomerAuthService } from '../../core/services/customer-auth.service';
 import { Slot } from '../../core/models/slot.model';
 import { SERVICES, ServiceType } from '../../core/models/booking.model';
+import { confirmDialog } from '../../shared/confirm-dialog/confirm-dialog';
 
 // Móvil español: 9 dígitos empezando por 6 o 7, admite +34/0034/34 y separadores.
 function spanishMobileValidator(control: AbstractControl): ValidationErrors | null {
@@ -46,7 +48,8 @@ interface CalendarDay {
     MatFormFieldModule,
     MatInputModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatDialogModule
   ],
   templateUrl: './client-booking.html',
   styleUrl: './client-booking.scss'
@@ -56,7 +59,10 @@ export class ClientBooking {
   private slotService = inject(SlotService);
   private bookingService = inject(BookingService);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
   readonly customerAuth = inject(CustomerAuthService);
+
+  readonly skeletonSlots = Array.from({ length: 6 });
 
   readonly services = SERVICES;
   readonly selectedService = signal<ServiceType | null>(null);
@@ -337,23 +343,30 @@ export class ClientBooking {
   }
 
   cancelMyBooking(booking: CancelableBooking): void {
-    if (!confirm(`¿Seguro que quieres cancelar tu cita del ${booking.date} a las ${this.formatTime(booking.time)}?`)) {
-      return;
-    }
+    confirmDialog(this.dialog, {
+      title: 'Cancelar cita',
+      message: `¿Seguro que quieres cancelar tu cita del ${booking.date} a las ${this.formatTime(booking.time)}?`,
+      confirmLabel: 'Cancelar cita',
+      cancelLabel: 'Volver',
+      danger: true,
+      icon: 'event_busy'
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    this.cancellingId.set(booking.id);
+      this.cancellingId.set(booking.id);
 
-    this.bookingService.cancelMyBooking(booking.id).subscribe({
-      next: () => {
-        this.cancellingId.set(null);
-        this.cancelledOne.set(true);
-        this.searchResults.set((this.searchResults() || []).filter((b) => b.id !== booking.id));
-      },
-      error: (err) => {
-        this.cancellingId.set(null);
-        const message = err?.error?.message || 'No se pudo cancelar la cita.';
-        this.snackBar.open(message, 'Cerrar', { duration: 5000 });
-      }
+      this.bookingService.cancelMyBooking(booking.id).subscribe({
+        next: () => {
+          this.cancellingId.set(null);
+          this.cancelledOne.set(true);
+          this.searchResults.set((this.searchResults() || []).filter((b) => b.id !== booking.id));
+        },
+        error: (err) => {
+          this.cancellingId.set(null);
+          const message = err?.error?.message || 'No se pudo cancelar la cita.';
+          this.snackBar.open(message, 'Cerrar', { duration: 5000 });
+        }
+      });
     });
   }
 }

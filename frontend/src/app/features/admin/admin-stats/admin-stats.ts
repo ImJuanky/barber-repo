@@ -1,8 +1,7 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
 import Chart from 'chart.js/auto';
 
 import { StatsService, StatsResponse } from '../../../core/services/stats.service';
@@ -12,7 +11,7 @@ type RangeOption = '6m' | '12m' | 'year';
 @Component({
   selector: 'app-admin-stats',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonToggleModule, MatProgressSpinnerModule],
+  imports: [CommonModule, MatButtonToggleModule, MatIconModule],
   templateUrl: './admin-stats.html',
   styleUrl: './admin-stats.scss'
 })
@@ -98,16 +97,21 @@ export class AdminStats implements AfterViewInit, OnDestroy {
             type: 'bar',
             label: 'Ingresos (€)',
             data: revenue,
-            backgroundColor: 'rgba(25, 118, 210, 0.75)',
+            backgroundColor: '#b8863c',
+            hoverBackgroundColor: '#a5762f',
             borderRadius: 6,
+            maxBarThickness: 34,
             yAxisID: 'y'
           },
           {
             type: 'line',
             label: 'Cortes realizados',
             data: counts,
-            borderColor: '#2e7d32',
-            backgroundColor: '#2e7d32',
+            borderColor: '#33465c',
+            backgroundColor: '#33465c',
+            pointBackgroundColor: '#33465c',
+            pointRadius: 3,
+            borderWidth: 2,
             tension: 0.35,
             yAxisID: 'y1'
           }
@@ -117,17 +121,32 @@ export class AdminStats implements AfterViewInit, OnDestroy {
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
+        font: { family: 'Inter, sans-serif' },
+        plugins: {
+          legend: { labels: { font: { family: 'Inter, sans-serif', weight: 600 }, usePointStyle: true } },
+          tooltip: {
+            backgroundColor: '#37332c',
+            titleFont: { family: 'Inter, sans-serif', weight: 700 },
+            bodyFont: { family: 'Inter, sans-serif' },
+            padding: 10,
+            cornerRadius: 8
+          }
+        },
         scales: {
           y: {
             position: 'left',
             beginAtZero: true,
-            title: { display: true, text: '€' }
+            grid: { color: 'rgba(93, 78, 55, 0.08)' },
+            title: { display: true, text: '€', font: { family: 'Inter, sans-serif' } }
           },
           y1: {
             position: 'right',
             beginAtZero: true,
             grid: { drawOnChartArea: false },
-            title: { display: true, text: 'Cortes' }
+            title: { display: true, text: 'Cortes', font: { family: 'Inter, sans-serif' } }
+          },
+          x: {
+            grid: { display: false }
           }
         }
       }

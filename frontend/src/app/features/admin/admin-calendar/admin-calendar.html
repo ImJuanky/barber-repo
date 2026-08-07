@@ -1,8 +1,15 @@
-<div class="calendar-page">
-  <div class="calendar-header">
-    <button mat-icon-button (click)="prevMonth()"><mat-icon>chevron_left</mat-icon></button>
-    <h1>{{ monthLabel() }}</h1>
-    <button mat-icon-button (click)="nextMonth()"><mat-icon>chevron_right</mat-icon></button>
+<div class="page calendar-page">
+  <div class="page-header">
+    <div>
+      <h1>Calendario</h1>
+      <p>Vista general de huecos por mes.</p>
+    </div>
+  </div>
+
+  <div class="calendar-nav">
+    <button mat-icon-button (click)="prevMonth()" aria-label="Mes anterior"><mat-icon>chevron_left</mat-icon></button>
+    <span class="month-label">{{ monthLabel() }}</span>
+    <button mat-icon-button (click)="nextMonth()" aria-label="Mes siguiente"><mat-icon>chevron_right</mat-icon></button>
   </div>
 
   @if (loading()) {
@@ -19,6 +26,7 @@
           [class.other-month]="!day.inCurrentMonth"
           [class.today]="day.isToday"
           [class.selected]="selectedDay()?.date === day.date"
+          [attr.aria-label]="day.date + (day.slots.length ? ', ' + day.slots.length + ' huecos' : ', sin huecos')"
           (click)="selectDay(day)"
         >
           <span class="day-number">{{ day.dayNumber }}</span>
@@ -46,16 +54,26 @@
     </div>
 
     @if (selectedDay()) {
-      <mat-card class="day-detail">
+      <div class="surface-card day-detail animate-in">
         <h2>{{ selectedDay()!.date }}</h2>
         @if (selectedDay()!.slots.length === 0) {
-          <p class="empty-state">No hay huecos creados este día.</p>
+          <div class="empty-state">
+            <mat-icon>event_available</mat-icon>
+            <span>No hay huecos creados este día.</span>
+          </div>
         } @else {
           <ul class="day-slot-list">
             @for (slot of selectedDay()!.slots; track slot.id) {
-              <li [class]="'status-' + slot.status">
+              <li>
                 <span class="slot-time">{{ formatTime(slot.time) }}</span>
-                <span class="slot-status">{{ slot.status }}</span>
+                <span
+                  class="status-chip"
+                  [class.chip-success]="slot.status === 'available'"
+                  [class.chip-info]="slot.status === 'booked'"
+                  [class.chip-neutral]="slot.status === 'blocked'"
+                >
+                  {{ slot.status === 'available' ? 'Disponible' : slot.status === 'booked' ? 'Reservado' : 'Bloqueado' }}
+                </span>
                 @if (slot.booking) {
                   <span class="slot-client">{{ slot.booking.clientName }} &middot; {{ slot.booking.clientPhone }}</span>
                 }
@@ -63,7 +81,7 @@
             }
           </ul>
         }
-      </mat-card>
+      </div>
     }
   }
 </div>

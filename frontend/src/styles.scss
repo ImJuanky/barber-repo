@@ -1,39 +1,475 @@
-// Include theming for Angular Material with `mat.theme()`.
-// This Sass mixin will define CSS variables that are used for styling Angular Material
-// components according to the Material 3 design spec.
-// Learn more about theming and how to use it for your application's
-// custom components at https://material.angular.dev/guide/theming
+// ============================================================================
+// SISTEMA DE DISEÑO — Peluquería
+// ----------------------------------------------------------------------------
+// Base: Angular Material 3 (mat.theme) para tipografía, elevación, forma y
+// tokens de componente. Sobre esa base se sobrescriben los tokens de color
+// del sistema (--mat-sys-*) con una paleta propia ("marfil + oro + tinta"),
+// para conseguir una identidad coherente y distintiva en lugar del azul
+// genérico por defecto — cualquier componente de Material que ya consuma
+// estos tokens se actualiza automáticamente, sin tocar cada componente.
+// ============================================================================
 @use '@angular/material' as mat;
 
 html {
   height: 100%;
+  color-scheme: light;
+
   @include mat.theme(
     (
       color: (
         primary: mat.$azure-palette,
         tertiary: mat.$blue-palette,
       ),
-      typography: Roboto,
+      typography: Inter,
       density: 0,
     )
   );
+
+  // --- Paleta de marca --------------------------------------------------
+  // Oro/latón (acción principal) — texto oscuro encima para máximo contraste.
+  --mat-sys-primary: #b8863c;
+  --mat-sys-on-primary: #241a06;
+  --mat-sys-primary-container: #f8e9c8;
+  --mat-sys-on-primary-container: #4a3712;
+  --mat-sys-inverse-primary: #e8c778;
+
+  // Neutro cálido (bronce/taupe) — soporte, chips, superficies secundarias.
+  --mat-sys-secondary: #6b5d46;
+  --mat-sys-on-secondary: #ffffff;
+  --mat-sys-secondary-container: #efe6d3;
+  --mat-sys-on-secondary-container: #4a3e29;
+
+  // Tinta/azul profundo — información, estados "reservado", enlaces fríos.
+  --mat-sys-tertiary: #33465c;
+  --mat-sys-on-tertiary: #ffffff;
+  --mat-sys-tertiary-container: #d8e3f0;
+  --mat-sys-on-tertiary-container: #1b2a3a;
+
+  // Error (rojo clásico, ligero matiz cálido para no desentonar).
+  --mat-sys-error: #b3261e;
+  --mat-sys-on-error: #ffffff;
+  --mat-sys-error-container: #f9dedc;
+  --mat-sys-on-error-container: #410e0b;
+
+  // Superficies — marfil cálido en vez de gris frío.
+  --mat-sys-background: #fbf9f4;
+  --mat-sys-on-background: #211e19;
+  --mat-sys-surface: #fbf9f4;
+  --mat-sys-surface-dim: #ddd9cf;
+  --mat-sys-surface-bright: #fbf9f4;
+  --mat-sys-on-surface: #211e19;
+  --mat-sys-on-surface-variant: #5c574c;
+  --mat-sys-surface-container-lowest: #ffffff;
+  --mat-sys-surface-container-low: #f6f2ea;
+  --mat-sys-surface-container: #f1ece1;
+  --mat-sys-surface-container-high: #ebe5d8;
+  --mat-sys-surface-container-highest: #e5decd;
+  --mat-sys-outline: #7d7767;
+  --mat-sys-outline-variant: #cfc8b7;
+  --mat-sys-inverse-surface: #37332c;
+  --mat-sys-inverse-on-surface: #f7f2e7;
+  --mat-sys-scrim: #000000;
+  --mat-sys-shadow: #000000;
+
+  // Radios de esquina globales: todo componente Material que use el sistema
+  // de "shape" (cards, botones, campos, chips, diálogos...) hereda esto.
+  --mat-sys-corner-extra-small: 6px;
+  --mat-sys-corner-small: 8px;
+  --mat-sys-corner-medium: 12px;
+  --mat-sys-corner-large: 18px;
+  --mat-sys-corner-extra-large: 28px;
+  --mat-sys-corner-full: 999px;
+
+  // --- Tokens propios de la aplicación -----------------------------------
+  --app-font-display: 'Plus Jakarta Sans', var(--mat-sys-body-medium-font, Inter), sans-serif;
+
+  --app-success: #2e7d32;
+  --app-success-container: #e3f2e5;
+  --app-on-success-container: #1c4a1f;
+  --app-warning: #a15c00;
+  --app-warning-container: #fbead0;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+
+  --shadow-xs: 0 1px 2px rgba(33, 24, 6, 0.06);
+  --shadow-sm: 0 2px 6px rgba(33, 24, 6, 0.07), 0 1px 2px rgba(33, 24, 6, 0.05);
+  --shadow-md: 0 8px 20px rgba(33, 24, 6, 0.09), 0 2px 6px rgba(33, 24, 6, 0.05);
+  --shadow-lg: 0 20px 45px rgba(33, 24, 6, 0.14), 0 6px 14px rgba(33, 24, 6, 0.06);
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decel: cubic-bezier(0, 0, 0, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
 }
 
 body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
   color-scheme: light;
-
-  // Set a default background, font and text colors for the application using
-  // Angular Material's system-level CSS variables. Learn more about these
-  // variables at https://material.angular.dev/guide/system-variables
-  background-color: var(--mat-sys-surface);
+  background: var(--mat-sys-surface);
+  background-image:
+    radial-gradient(circle at 12% -10%, color-mix(in srgb, var(--mat-sys-primary) 7%, transparent) 0%, transparent 45%),
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--mat-sys-tertiary) 5%, transparent) 0%, transparent 40%);
+  background-attachment: fixed;
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
-
-  // Reset the user agent margin.
   margin: 0;
   height: 100%;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
-/* You can add global styles to this file, and also import other style files */
+
+* {
+  box-sizing: border-box;
+}
+
+h1,
+h2,
+h3,
+.app-display {
+  font-family: var(--app-font-display);
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--mat-sys-primary) 35%, transparent);
+}
+
+// --- Scroll & foco -----------------------------------------------------
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--mat-sys-outline-variant);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--mat-sys-surface);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mat-sys-outline);
+}
+
+// Foco visible consistente y accesible en toda la app (no se sacrifica por estética).
+:focus-visible {
+  outline: 2.5px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+a {
+  color: var(--mat-sys-primary);
+}
+
+// --- Utilidades compartidas (evitan duplicar CSS entre features) -------
+.page {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-12);
+  box-sizing: border-box;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+
+  h1 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 800;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 0.92rem;
+  }
+}
+
+.surface-card {
+  background: var(--mat-sys-surface-container-lowest);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+// Estado vacío reutilizable: icono + texto centrado.
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+  padding: var(--space-8) var(--space-4);
+  font-size: 0.92rem;
+
+  mat-icon {
+    font-size: 34px;
+    width: 34px;
+    height: 34px;
+    opacity: 0.55;
+  }
+}
+
+.loading-row {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-8) 0;
+}
+
+// Chips de estado reutilizables (reservas, huecos...).
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &.chip-success {
+    background: var(--app-success-container);
+    color: var(--app-on-success-container);
+  }
+  &.chip-info {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+  &.chip-neutral {
+    background: var(--mat-sys-surface-container-high);
+    color: var(--mat-sys-on-surface-variant);
+  }
+  &.chip-warn {
+    background: var(--app-warning-container);
+    color: var(--app-warning);
+  }
+  &.chip-danger {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+}
+
+// Tabla de datos responsive reutilizable: en desktop es una tabla normal;
+// en móvil, cada fila se convierte en una tarjeta con etiquetas (usa el
+// atributo data-label en cada <td>, ver componentes admin-*).
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+
+  th {
+    text-align: left;
+    padding: var(--space-2) var(--space-3);
+    color: var(--mat-sys-on-surface-variant);
+    font-weight: 600;
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  td {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--mat-sys-surface-container-high);
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    transition: background var(--dur-fast) var(--ease-standard);
+  }
+
+  tbody tr:hover {
+    background: var(--mat-sys-surface-container-low);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .data-table {
+    display: block;
+
+    thead {
+      display: none;
+    }
+
+    tbody,
+    tr {
+      display: block;
+      width: 100%;
+    }
+
+    tr {
+      background: var(--mat-sys-surface-container-lowest);
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-3);
+      padding: var(--space-2) var(--space-3);
+      box-shadow: var(--shadow-xs);
+    }
+
+    tbody tr:hover {
+      background: var(--mat-sys-surface-container-lowest);
+    }
+
+    td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      padding: 7px 2px;
+      border-bottom: 1px dashed var(--mat-sys-outline-variant);
+      text-align: right;
+    }
+
+    td:last-child {
+      border-bottom: none;
+    }
+
+    td[data-label]::before {
+      content: attr(data-label);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: var(--mat-sys-on-surface-variant);
+      text-align: left;
+      margin-right: auto;
+    }
+
+    td.actions-cell {
+      justify-content: flex-end;
+    }
+
+    td.actions-cell::before {
+      display: none;
+    }
+  }
+}
+
+// --- Skeleton loaders ----------------------------------------------------
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--mat-sys-surface-container-high);
+  border-radius: var(--radius-sm);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in srgb, var(--mat-sys-surface-container-lowest) 70%, transparent) 50%,
+      transparent 70%
+    );
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+}
+
+// --- Animaciones globales -------------------------------------------------
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-in {
+  animation: fade-in-up var(--dur-slow) var(--ease-decel) both;
+}
+
+// Transiciones nativas de navegación entre páginas (View Transitions API,
+// activadas en app.config.ts con withViewTransitions()). Cross-fade sutil,
+// sin coste de JS ni librerías adicionales.
+::view-transition-old(root) {
+  animation: fade-out var(--dur-base) var(--ease-standard) both;
+}
+::view-transition-new(root) {
+  animation: fade-in var(--dur-base) var(--ease-standard) both;
+}
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+// Accesibilidad: respeta la preferencia del usuario de reducir movimiento.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
