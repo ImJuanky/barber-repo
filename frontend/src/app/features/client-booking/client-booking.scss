@@ -283,7 +283,7 @@
     background: var(--mat-sys-primary-container);
     color: var(--mat-sys-on-primary-container);
     padding-top: 7px;
-    animation: recommend-pop 0.35s ease;
+    animation: recommend-pulse 1.8s ease-in-out infinite;
 
     &:hover {
       transform: translateY(-1px);
@@ -293,6 +293,11 @@
     &.selected {
       background: var(--mat-sys-primary);
       color: var(--mat-sys-on-primary);
+      animation: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
     }
   }
 }
@@ -322,14 +327,17 @@
   line-height: 1.1;
 }
 
-@keyframes recommend-pop {
-  from {
-    transform: scale(0.94);
-    opacity: 0.6;
-  }
-  to {
+// Pulso suave y continuo ("late") para que la hora recomendada se note sin
+// resultar agresiva: ligero cambio de escala + halo que respira alrededor.
+@keyframes recommend-pulse {
+  0%,
+  100% {
     transform: scale(1);
-    opacity: 1;
+    box-shadow: 0 0 0 0 var(--mat-sys-primary);
+  }
+  50% {
+    transform: scale(1.035);
+    box-shadow: 0 0 10px 3px var(--mat-sys-primary);
   }
 }
 
