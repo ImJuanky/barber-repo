@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { Slot, Booking } = require('../models');
-const { getMadridNowParts, isPastSlot } = require('../utils/time');
+const { getMadridNowParts, isBookable } = require('../utils/time');
 const { annotateWithRecommendations } = require('../utils/recommendation');
 
 // GET /api/slots?date=YYYY-MM-DD  (público: solo huecos disponibles, sin datos de reservas)
@@ -26,11 +26,12 @@ async function getAvailableSlots(req, res, next) {
       attributes: ['id', 'date', 'time', 'durationMinutes']
     });
 
-    // Nunca mostrar (ni permitir reservar) huecos cuya hora ya haya pasado
-    // en el día de hoy. Esto es una validación real de datos, no solo de UI:
-    // el mismo filtro protege también /api/bookings vía isPastSlot.
+    // Nunca mostrar (ni permitir reservar) huecos que ya hayan pasado o a
+    // los que les falten menos de MIN_BOOKING_LEAD_MINUTES para empezar.
+    // Esto es una validación real de datos, no solo de UI: el mismo criterio
+    // protege también /api/bookings vía isBookable.
     const nowParts = getMadridNowParts();
-    const futureSlots = slots.filter((slot) => !isPastSlot(slot.date, slot.time, nowParts));
+    const futureSlots = slots.filter((slot) => isBookable(slot.date, slot.time, nowParts));
 
     // Se calculan las recomendaciones día a día, usando todas las citas
     // confirmadas de cada fecha implicada (no solo las de los huecos libres).
@@ -94,13 +95,14 @@ async function getAvailabilityByMonth(req, res, next) {
       attributes: ['date', 'time']
     });
 
-    // Un hueco de hoy cuya hora ya pasó no cuenta como disponibilidad real
-    // (evita que el calendario marque hoy como "con huecos" cuando ya no
-    // queda ninguna hora reservable).
+    // Un hueco que ya pasó, o al que le faltan menos de
+    // MIN_BOOKING_LEAD_MINUTES, no cuenta como disponibilidad real (evita
+    // que el calendario marque hoy como "con huecos" cuando ya no queda
+    // ninguna hora reservable).
     const nowParts = getMadridNowParts();
     const counts = {};
     for (const slot of slots) {
-      if (isPastSlot(slot.date, slot.time, nowParts)) continue;
+      if (!isBookable(slot.date, slot.time, nowParts)) continue;
       counts[slot.date] = (counts[slot.date] || 0) + 1;
     }
 

@@ -40,20 +40,53 @@ function normalizeTime(time) {
   return `${h.padStart(2, '0')}:${m.padStart(2, '0')}:${s.padStart(2, '0')}`;
 }
 
-// ¿La combinación fecha+hora indicada ya ha pasado respecto a "ahora" en Madrid?
-// Un hueco que empieza justo "ahora" también se considera pasado (no tiene
-// sentido reservar una cita que debería empezar en este mismo instante).
-function isPastSlot(date, time, referenceNow = getMadridNowParts()) {
-  if (!date) return false;
-  if (date < referenceNow.date) return true;
-  if (date > referenceNow.date) return false;
-  return normalizeTime(time) <= referenceNow.time;
-}
-
 // Convierte 'HH:mm' o 'HH:mm:ss' a minutos desde medianoche.
 function timeToMinutes(time) {
   const [h, m] = normalizeTime(time).split(':').map(Number);
   return h * 60 + m;
 }
 
-module.exports = { TIMEZONE, getMadridNowParts, normalizeTime, isPastSlot, timeToMinutes };
+// Minutos absolutos (día calendario * 1440 + minuto del día) para poder
+// restar dos marcas fecha+hora sin importar si caen en días distintos
+// (p. ej. hoy 23:50 frente a mañana 00:05). Se usa aritmética de calendario
+// pura (Date.UTC solo como contador de días), no conversión real a UTC, así
+// que no depende de en qué huso horario esté el servidor.
+function toAbsoluteMinutes(date, time) {
+  const [year, month, day] = String(date).split('-').map(Number);
+  const days = Date.UTC(year, month - 1, day) / 86400000;
+  return days * 1440 + timeToMinutes(time);
+}
+
+// Minutos que faltan desde "ahora" (Madrid) hasta la fecha+hora indicada.
+// Negativo si esa hora ya pasó.
+function minutesUntilSlot(date, time, referenceNow = getMadridNowParts()) {
+  if (!date) return Infinity;
+  return toAbsoluteMinutes(date, time) - toAbsoluteMinutes(referenceNow.date, referenceNow.time);
+}
+
+// ¿La combinación fecha+hora indicada ya ha pasado respecto a "ahora" en Madrid?
+// Un hueco que empieza justo "ahora" también se considera pasado (no tiene
+// sentido reservar una cita que debería empezar en este mismo instante).
+function isPastSlot(date, time, referenceNow = getMadridNowParts()) {
+  return minutesUntilSlot(date, time, referenceNow) <= 0;
+}
+
+// Antelación mínima exigida para poder reservar un hueco (en minutos).
+const MIN_BOOKING_LEAD_MINUTES = 20;
+
+// ¿Se puede reservar este hueco ahora mismo? No basta con que sea futuro:
+// además debe faltar al menos MIN_BOOKING_LEAD_MINUTES para que empiece.
+function isBookable(date, time, referenceNow = getMadridNowParts(), leadMinutes = MIN_BOOKING_LEAD_MINUTES) {
+  return minutesUntilSlot(date, time, referenceNow) >= leadMinutes;
+}
+
+module.exports = {
+  TIMEZONE,
+  MIN_BOOKING_LEAD_MINUTES,
+  getMadridNowParts,
+  normalizeTime,
+  timeToMinutes,
+  minutesUntilSlot,
+  isPastSlot,
+  isBookable
+};

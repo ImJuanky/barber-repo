@@ -3,7 +3,7 @@ const { sequelize, Slot, Booking, Customer } = require('../models');
 const googleCalendarService = require('../services/googleCalendarService');
 const ntfyService = require('../services/ntfyService');
 const { isValidService, getServicePrice, getServiceLabel } = require('../utils/services');
-const { isPastSlot } = require('../utils/time');
+const { isBookable, MIN_BOOKING_LEAD_MINUTES } = require('../utils/time');
 
 // POST /api/bookings  { slotId, service }  (requiere sesión de cliente)
 // El nombre y el teléfono se toman del cliente autenticado, nunca del body.
@@ -32,10 +32,13 @@ async function createBooking(req, res, next) {
     }
 
     // Regla de negocio real (no solo de interfaz): no se puede reservar una
-    // hora que ya haya pasado respecto a la hora actual en Madrid.
-    if (isPastSlot(slot.date, slot.time)) {
+    // hora que ya haya pasado, ni una a la que le falten menos de
+    // MIN_BOOKING_LEAD_MINUTES respecto a la hora actual en Madrid.
+    if (!isBookable(slot.date, slot.time)) {
       await t.rollback();
-      return res.status(409).json({ message: 'Esa hora ya ha pasado. Elige un hueco futuro.' });
+      return res.status(409).json({
+        message: `Debes reservar con al menos ${MIN_BOOKING_LEAD_MINUTES} minutos de antelación. Elige otro hueco.`
+      });
     }
 
     const clientName = customer.name;
