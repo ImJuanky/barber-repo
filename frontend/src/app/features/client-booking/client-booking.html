@@ -213,7 +213,7 @@
         </mat-card>
 
         @if (selectedDate()) {
-          <mat-card class="step-card animate-in">
+          <mat-card class="step-card animate-in" #hoursSection>
             <h2 class="step-title"><span class="step-number">3</span> Elige una hora</h2>
 
             @if (loadingSlots()) {
@@ -258,7 +258,7 @@
         }
 
         @if (selectedSlot()) {
-          <mat-card class="step-card animate-in">
+          <mat-card class="step-card animate-in" #confirmSection>
             <h2 class="step-title"><span class="step-number">4</span> Confirmar</h2>
             <p class="confirm-summary">
               <strong>{{ serviceLabel(selectedService()!) }}</strong> el

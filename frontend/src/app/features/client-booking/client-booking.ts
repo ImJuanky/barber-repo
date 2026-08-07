@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
@@ -78,6 +78,10 @@ export class ClientBooking {
   readonly submitting = signal(false);
   readonly loadingSlots = signal(false);
   readonly confirmed = signal<{ date: string; time: string; service: ServiceType } | null>(null);
+
+  // Referencias para desplazar la vista automáticamente al elegir día/hora.
+  @ViewChild('hoursSection') private hoursSection?: ElementRef<HTMLElement>;
+  @ViewChild('confirmSection') private confirmSection?: ElementRef<HTMLElement>;
 
   readonly monthLabel = computed(() =>
     this.viewMonth().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
@@ -200,6 +204,7 @@ export class ClientBooking {
     this.selectedDate.set(day.date);
     this.selectedSlot.set(null);
     this.loadSlots(day.date);
+    this.scrollToAfterRender(() => this.hoursSection);
   }
 
   loadSlots(date: string): void {
@@ -218,6 +223,19 @@ export class ClientBooking {
 
   selectSlot(slot: Slot): void {
     this.selectedSlot.set(slot);
+    this.scrollToAfterRender(() => this.confirmSection);
+  }
+
+  // Espera a que Angular pinte la sección recién revelada (@if) antes de
+  // desplazar la vista hacia ella, con scroll suave salvo que el usuario
+  // prefiera movimiento reducido.
+  private scrollToAfterRender(getRef: () => ElementRef<HTMLElement> | undefined): void {
+    setTimeout(() => {
+      const el = getRef()?.nativeElement;
+      if (!el) return;
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    });
   }
 
   formatTime(time: string): string {
